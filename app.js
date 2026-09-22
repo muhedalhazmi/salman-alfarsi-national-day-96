@@ -34,7 +34,7 @@ let isSubmitting = false;
 
 const labels = {
   student: 'الطلاب',
-  parents: 'أولياء الأمور',
+  parent: 'أولياء الأمور',
   staff: 'الكادر',
   community: 'المجتمع'
 };
@@ -461,7 +461,56 @@ function sanitizeFileName(
 
 
 /* =================================
-   تحميل المشاركات
+   تحديد التصنيف من عنوان المشاركة
+================================= */
+
+function getCategoryFromTitle(
+  title
+) {
+
+  const value =
+    String(
+      title || ''
+    );
+
+  if (
+    value.startsWith(
+      'الطلاب'
+    )
+  ) {
+    return 'student';
+  }
+
+  if (
+    value.startsWith(
+      'أولياء الأمور'
+    )
+  ) {
+    return 'parent';
+  }
+
+  if (
+    value.startsWith(
+      'الكادر'
+    )
+  ) {
+    return 'staff';
+  }
+
+  if (
+    value.startsWith(
+      'المجتمع'
+    )
+  ) {
+    return 'community';
+  }
+
+  return 'student';
+}
+
+
+/* =================================
+   تحميل المشاركات المعتمدة
 ================================= */
 
 async function loadSubmissions() {
@@ -471,11 +520,6 @@ async function loadSubmissions() {
   }
 
   try {
-
-    /*
-      لا نستخدم created_at لأن العمود
-      غير موجود في جدول submissions.
-    */
 
     const {
       data,
@@ -487,6 +531,12 @@ async function loadSubmissions() {
         .eq(
           'status',
           'approved'
+        )
+        .order(
+          'submitted_at',
+          {
+            ascending: false
+          }
         );
 
     if (error) {
@@ -504,6 +554,13 @@ async function loadSubmissions() {
         ? data
         : [];
 
+    console.log(
+      'APPROVED SUBMISSIONS:',
+      submissions
+    );
+
+    updateStats();
+
     render();
 
   } catch (error) {
@@ -512,6 +569,92 @@ async function loadSubmissions() {
       'LOAD ERROR:',
       error
     );
+  }
+}
+
+
+/* =================================
+   إحصائيات المشاركات
+================================= */
+
+function updateStats() {
+
+  const total =
+    document.getElementById(
+      'total'
+    );
+
+  const students =
+    document.getElementById(
+      'students'
+    );
+
+  const parents =
+    document.getElementById(
+      'parents'
+    );
+
+  const featured =
+    document.getElementById(
+      'featured'
+    );
+
+  if (total) {
+
+    total.textContent =
+      submissions.length;
+  }
+
+  let studentCount = 0;
+
+  let parentCount = 0;
+
+  submissions.forEach(
+    function (item) {
+
+      const category =
+        getCategoryFromTitle(
+          item.title
+        );
+
+      if (
+        category ===
+        'student'
+      ) {
+
+        studentCount++;
+      }
+
+      if (
+        category ===
+        'parent'
+      ) {
+
+        parentCount++;
+      }
+    }
+  );
+
+  if (students) {
+
+    students.textContent =
+      studentCount;
+  }
+
+  if (parents) {
+
+    parents.textContent =
+      parentCount;
+  }
+
+  if (featured) {
+
+    featured.textContent =
+      submissions.filter(
+        item =>
+          item.featured === true ||
+          item.featured === 1
+      ).length;
   }
 }
 
@@ -540,8 +683,10 @@ function getMediaUrl(
           storagePath
         );
 
-    return result?.data?.publicUrl ||
-      '';
+    return (
+      result?.data?.publicUrl ||
+      ''
+    );
 
   } catch (error) {
 
@@ -562,11 +707,21 @@ function getMediaUrl(
 function render() {
 
   const container =
-    document.querySelector(
-      '[data-submissions]'
+    document.getElementById(
+      'wallGrid'
+    );
+
+  const empty =
+    document.getElementById(
+      'empty'
     );
 
   if (!container) {
+
+    console.error(
+      'wallGrid element not found.'
+    );
+
     return;
   }
 
@@ -577,6 +732,11 @@ function render() {
       ? submissions
       : [];
 
+
+  /* -----------------------------
+     فلترة التصنيف
+  ----------------------------- */
+
   if (
     currentFilter !==
     'all'
@@ -584,27 +744,89 @@ function render() {
 
     items =
       items.filter(
-        item =>
-          item.category ===
-          currentFilter
+        function (item) {
+
+          return (
+            getCategoryFromTitle(
+              item.title
+            ) ===
+            currentFilter
+          );
+        }
       );
   }
 
+
+  /* -----------------------------
+     البحث
+  ----------------------------- */
+
+  const search =
+    document.getElementById(
+      'search'
+    );
+
+  const searchValue =
+    String(
+      search?.value || ''
+    )
+      .trim()
+      .toLowerCase();
+
+  if (searchValue) {
+
+    items =
+      items.filter(
+        function (item) {
+
+          const text =
+            [
+              item.student_name,
+              item.title,
+              item.description,
+              item.grade
+            ]
+              .filter(Boolean)
+              .join(' ')
+              .toLowerCase();
+
+          return text.includes(
+            searchValue
+          );
+        }
+      );
+  }
+
+
+  /* -----------------------------
+     لا توجد نتائج
+  ----------------------------- */
+
   if (!items.length) {
 
-    container.innerHTML = `
-      <div style="
-        width:100%;
-        padding:40px 20px;
-        text-align:center;
-        color:#777;
-      ">
-        لا توجد مشاركات معتمدة حاليًا.
-      </div>
-    `;
+    container.innerHTML =
+      '';
+
+    if (empty) {
+
+      empty.hidden =
+        false;
+    }
 
     return;
   }
+
+
+  if (empty) {
+
+    empty.hidden =
+      true;
+  }
+
+
+  /* -----------------------------
+     عرض البطاقات
+  ----------------------------- */
 
   container.innerHTML =
     items
@@ -655,44 +877,47 @@ function createSubmissionCard(
   let media =
     '';
 
+
   if (
     item.media_type ===
     'video'
   ) {
 
     media = `
-      <video
-        src="${mediaUrl}"
-        controls
-        preload="metadata"
-        style="
-          width:100%;
-          max-height:420px;
-          object-fit:cover;
-          border-radius:14px;
-        "
-      ></video>
+      <div class="submission-media">
+
+        <video
+          src="${mediaUrl}"
+          controls
+          preload="metadata"
+        ></video>
+
+      </div>
     `;
 
-  } else if (mediaUrl) {
+  } else if (
+    mediaUrl
+  ) {
 
     media = `
-      <img
-        src="${mediaUrl}"
-        alt="${title}"
-        loading="lazy"
-        style="
-          width:100%;
-          max-height:420px;
-          object-fit:cover;
-          border-radius:14px;
-        "
-      >
+      <div class="submission-media">
+
+        <img
+          src="${mediaUrl}"
+          alt="${title}"
+          loading="lazy"
+        >
+
+      </div>
     `;
   }
 
+
   return `
-    <article class="submission-card">
+    <article
+      class="submission-card"
+      data-category="${getCategoryFromTitle(item.title)}"
+    >
 
       ${media}
 
@@ -706,16 +931,19 @@ function createSubmissionCard(
           ${description}
         </p>
 
-        <div>
+        <div class="submission-meta">
+
           <strong>
             ${name}
           </strong>
 
           ${
-            grade
+            grade &&
+            grade !== 'غير محدد'
               ? `<span> — ${grade}</span>`
               : ''
           }
+
         </div>
 
       </div>
@@ -768,11 +996,14 @@ async function submitParticipation(
 ) {
 
   event.preventDefault();
+
   event.stopPropagation();
+
 
   if (isSubmitting) {
     return;
   }
+
 
   const form =
     event.currentTarget;
@@ -780,6 +1011,7 @@ async function submitParticipation(
   if (!form) {
     return;
   }
+
 
   if (!supabaseClient) {
 
@@ -791,32 +1023,39 @@ async function submitParticipation(
     return;
   }
 
+
   const fd =
     new FormData(form);
+
 
   const file =
     fd.get('media') ||
     getFileInput()?.files?.[0];
+
 
   const name =
     String(
       fd.get('name') || ''
     ).trim();
 
+
   const category =
     String(
       fd.get('category') || ''
     ).trim();
+
 
   const grade =
     String(
       fd.get('grade') || ''
     ).trim();
 
+
   const message =
     String(
       fd.get('message') || ''
     ).trim();
+
 
   const consent =
     fd.get('consent') === 'on';
@@ -928,7 +1167,7 @@ async function submitParticipation(
   try {
 
     /* =================================
-       رفع الملف إلى Storage
+       رفع الملف
     ================================= */
 
     const {
@@ -975,13 +1214,6 @@ async function submitParticipation(
     );
 
 
-    /*
-      grade في قاعدة البيانات
-      لا يقبل NULL.
-      إذا ترك المستخدم الصف فارغًا،
-      نرسل "غير محدد".
-    */
-
     const safeGrade =
       grade ||
       'غير محدد';
@@ -993,6 +1225,7 @@ async function submitParticipation(
       await supabaseClient
         .from('submissions')
         .insert({
+
           id:
             submissionId,
 
@@ -1030,8 +1263,6 @@ async function submitParticipation(
       );
 
 
-      /* تنظيف الملف إذا فشل التسجيل */
-
       try {
 
         await supabaseClient.storage
@@ -1058,7 +1289,7 @@ async function submitParticipation(
 
 
     /* =================================
-       نجح التسجيل
+       نجاح الإرسال
     ================================= */
 
     console.log(
@@ -1123,26 +1354,22 @@ function setupInterface() {
 
 
   /* =================================
-     إغلاق النافذة بالنقر خارجها
+     البحث
   ================================= */
 
-  const modal =
-    getModal();
+  const search =
+    document.getElementById(
+      'search'
+    );
 
 
-  if (modal) {
+  if (search) {
 
-    modal.addEventListener(
-      'click',
-      function (event) {
+    search.addEventListener(
+      'input',
+      function () {
 
-        if (
-          event.target ===
-          modal
-        ) {
-
-          closeModal();
-        }
+        render();
       }
     );
   }
@@ -1195,7 +1422,7 @@ function setupInterface() {
 
 
   /* =================================
-     زر ESC
+     ESC
   ================================= */
 
   document.addEventListener(
