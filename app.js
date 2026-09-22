@@ -68,6 +68,7 @@ function loadSupabase() {
   if (
     typeof window.supabase === 'undefined'
   ) {
+
     console.error(
       'Supabase library is not loaded.'
     );
@@ -149,6 +150,7 @@ function showStatus(
     getStatus();
 
   if (!status) {
+
     console.log(
       `[${type}] ${message}`
     );
@@ -244,6 +246,7 @@ function openModal(
     getModal();
 
   if (!modal) {
+
     console.error(
       'Modal element not found.'
     );
@@ -469,6 +472,11 @@ async function loadSubmissions() {
 
   try {
 
+    /*
+      لا نستخدم created_at لأن العمود
+      غير موجود في جدول submissions.
+    */
+
     const {
       data,
       error
@@ -479,12 +487,6 @@ async function loadSubmissions() {
         .eq(
           'status',
           'approved'
-        )
-        .order(
-          'created_at',
-          {
-            ascending: false
-          }
         );
 
     if (error) {
@@ -819,6 +821,11 @@ async function submitParticipation(
   const consent =
     fd.get('consent') === 'on';
 
+
+  /* -----------------------------
+     التحقق من البيانات
+  ----------------------------- */
+
   if (
     !name ||
     !message ||
@@ -834,6 +841,7 @@ async function submitParticipation(
     return;
   }
 
+
   if (
     !file ||
     !(file instanceof File) ||
@@ -847,6 +855,7 @@ async function submitParticipation(
 
     return;
   }
+
 
   if (
     !ALLOWED_TYPES.has(
@@ -862,6 +871,7 @@ async function submitParticipation(
     return;
   }
 
+
   if (
     file.size >
     MAX_FILE_SIZE
@@ -875,6 +885,11 @@ async function submitParticipation(
     return;
   }
 
+
+  /* =================================
+     تحديد نوع الوسائط
+  ================================= */
+
   const mediaType =
     file.type.startsWith(
       'video/'
@@ -882,29 +897,39 @@ async function submitParticipation(
       ? 'video'
       : 'image';
 
+
+  /* =================================
+     إنشاء معرف المشاركة
+  ================================= */
+
   const submissionId =
     crypto.randomUUID();
+
 
   const storagePath =
     `${submissionId}/${mediaType}/${sanitizeFileName(file.name)}`;
 
+
   const title =
     `${labels[category]} - مشاركة اليوم الوطني`;
+
 
   setSubmitting(
     true
   );
+
 
   showStatus(
     'جارٍ رفع المشاركة…',
     'info'
   );
 
+
   try {
 
-    /* -----------------------------
-       رفع الملف
-    ----------------------------- */
+    /* =================================
+       رفع الملف إلى Storage
+    ================================= */
 
     const {
       error: uploadError
@@ -926,6 +951,7 @@ async function submitParticipation(
           }
         );
 
+
     if (uploadError) {
 
       console.error(
@@ -939,14 +965,27 @@ async function submitParticipation(
     }
 
 
-    /* -----------------------------
+    /* =================================
        تسجيل المشاركة
-    ----------------------------- */
+    ================================= */
 
     showStatus(
       'تم رفع الملف. جارٍ تسجيل المشاركة…',
       'info'
     );
+
+
+    /*
+      grade في قاعدة البيانات
+      لا يقبل NULL.
+      إذا ترك المستخدم الصف فارغًا،
+      نرسل "غير محدد".
+    */
+
+    const safeGrade =
+      grade ||
+      'غير محدد';
+
 
     const {
       error: insertError
@@ -961,7 +1000,7 @@ async function submitParticipation(
             name,
 
           grade:
-            grade || null,
+            safeGrade,
 
           title:
             title,
@@ -982,12 +1021,16 @@ async function submitParticipation(
             'pending'
         });
 
+
     if (insertError) {
 
       console.error(
         'DATABASE INSERT ERROR:',
         insertError
       );
+
+
+      /* تنظيف الملف إذا فشل التسجيل */
 
       try {
 
@@ -1007,20 +1050,22 @@ async function submitParticipation(
         );
       }
 
+
       throw new Error(
         `تعذر تسجيل المشاركة: ${insertError.message}`
       );
     }
 
 
-    /* -----------------------------
-       نجاح كامل
-    ----------------------------- */
+    /* =================================
+       نجح التسجيل
+    ================================= */
 
     console.log(
       'SUBMISSION SUCCESS:',
       submissionId
     );
+
 
     form.reset();
 
@@ -1030,7 +1075,9 @@ async function submitParticipation(
 
     showSuccessMessage();
 
+
     await loadSubmissions();
+
 
   } catch (error) {
 
@@ -1039,11 +1086,13 @@ async function submitParticipation(
       error
     );
 
+
     showStatus(
       error?.message ||
       'حدث خطأ غير متوقع أثناء إرسال المشاركة.',
       'error'
     );
+
 
   } finally {
 
@@ -1063,6 +1112,7 @@ function setupInterface() {
   const form =
     getForm();
 
+
   if (form) {
 
     form.addEventListener(
@@ -1072,12 +1122,13 @@ function setupInterface() {
   }
 
 
-  /* -----------------------------
-     إغلاق النافذة
-  ----------------------------- */
+  /* =================================
+     إغلاق النافذة بالنقر خارجها
+  ================================= */
 
   const modal =
     getModal();
+
 
   if (modal) {
 
@@ -1097,9 +1148,9 @@ function setupInterface() {
   }
 
 
-  /* -----------------------------
+  /* =================================
      أزرار التصنيف
-  ----------------------------- */
+  ================================= */
 
   document
     .querySelectorAll(
@@ -1116,6 +1167,7 @@ function setupInterface() {
               button.dataset.filter ||
               'all';
 
+
             document
               .querySelectorAll(
                 '[data-filter]'
@@ -1129,9 +1181,11 @@ function setupInterface() {
                 }
               );
 
+
             button.classList.add(
               'active'
             );
+
 
             render();
           }
@@ -1140,9 +1194,9 @@ function setupInterface() {
     );
 
 
-  /* -----------------------------
+  /* =================================
      زر ESC
-  ----------------------------- */
+  ================================= */
 
   document.addEventListener(
     'keydown',
@@ -1168,8 +1222,10 @@ async function startApp() {
 
   setupInterface();
 
+
   const loaded =
     loadSupabase();
+
 
   if (!loaded) {
 
@@ -1179,6 +1235,7 @@ async function startApp() {
 
     return;
   }
+
 
   await loadSubmissions();
 }
