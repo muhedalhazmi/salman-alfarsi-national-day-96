@@ -682,4 +682,283 @@ function sanitizeFileName(name) {
 
 
   const safe =
+  base
+    .replace(
+      /[^a-zA-Z0-9_-]+/g,
+      '-'
+    )
+    .replace(
+      /^-+|-+$/g,
+      ''
+    )
+    .slice(
+      0,
+      80
+    ) ||
+  'submission';
+
+return `${safe}-${Date.now()}.${ext}`;
+}
+
+
+/* =========================
+   إرسال المشاركة
+========================= */
+
+async function submitParticipation(event) {
+  event.preventDefault();
+  event.stopPropagation();
+
+  const form = event.currentTarget;
+  if (!form) return;
+
+  if (!supabase) {
+    showStatus(
+      'الاتصال بقاعدة البيانات غير جاهز. أعد تحميل الصفحة وحاول مرة أخرى.',
+      'error'
+    );
+    return;
+  }
+
+  const fd = new FormData(form);
+
+  const file =
+    fd.get('media') ||
+    getFileInput()?.files?.[0];
+
+  const name = String(fd.get('name') || '').trim();
+  const category = String(fd.get('category') || '');
+  const grade = String(fd.get('grade') || '').trim();
+  const message = String(fd.get('message') || '').trim();
+  const consent = fd.get('consent') === 'on';
+
+  if (!name || !message || !labels[category] || !consent) {
+    showStatus(
+      'أكمل البيانات المطلوبة ووافق على الإقرار.',
+      'error'
+    );
+    return;
+  }
+
+  if (!file || !(file instanceof File) || file.size === 0) {
+    showStatus(
+      'اختر صورة أو فيديو للمشاركة أولًا.',
+      'error'
+    );
+    return;
+  }
+
+  if (!ALLOWED_TYPES.has(file.type)) {
+    showStatus(
+      'نوع الملف غير مسموح.',
+      'error'
+    );
+    return;
+  }
+
+  if (file.size > MAX_FILE_SIZE) {
+    showStatus(
+      'حجم الملف يتجاوز 25 MB.',
+      'error'
+    );
+    return;
+  }
+
+  const mediaType =
+    file.type.startsWith('video/')
+      ? 'video'
+      : 'image';
+
+  const submissionId = crypto.randomUUID();
+
+  const storagePath =
+    `${submissionId}/${mediaType}/${sanitizeFileName(file.name)}`;
+
+  const title =
+    `${labels[category]} - مشاركة اليوم الوطني`;
+
+  setSubmitting(true);
+
+  showStatus(
+    'جارٍ رفع المشاركة…',
+    'info'
+  );
+
+  try {
+
+    const { error: uploadError } =
+      await supabase.storage
+        .from('submissions')
+        .upload(
+          storagePath,
+          file,
+          {
+            cacheControl: '3600',
+            contentType: file.type,
+            upsert: false
+          }
+        );
+
+    if (uploadError) {
+      console.error(
+        'STORAGE UPLOAD ERROR:',
+        uploadError
+      );
+
+      throw new Error(
+        `تعذر رفع الملف: ${uploadError.message}`
+      );
+    }
+
+    showStatus(
+      'تم رفع الملف. جارٍ تسجيل المشاركة…',
+      'info'
+    );
+
+    const { error: insertError } =
+      await supabase
+        .from('submissions')
+        .insert({
+          id: submissionId,
+          student_name: name,
+          grade: grade || null,
+          title: title,
+          description: message,
+          media_type: mediaType,
+          storage_path: storagePath,
+          guardian_consent: true,
+          status: 'pending'
+        });
+
+    if (insertError) {
+      console.error(
+        'DATABASE INSERT ERROR:',
+        insertError
+      );
+
+      throw new Error(
+        `تم رفع الملف، لكن تعذر تسجيل المشاركة: ${insertError.message}`
+      );
+    }
+
+    form.reset();
+
+    closeModal();
+
+    showSuccessMessage();
+
+    location.hash = 'wall';
+
+    await loadSubmissions();
+
+  } catch (error) {
+
+    console.error(
+      'SUBMISSION ERROR:',
+      error
+    );
+
+    showStatus(
+      error?.message ||
+      'حدث خطأ غير متوقع أثناء إرسال المشاركة.',
+      'error'
+    );
+
+  } finally {
+
+    setSubmitting(false);
+
+  }
+}
+
+
+/* =========================
+   تشغيل التطبيق
+========================= */
+
+async function startApp() {
+
+  prepareForm();
+
+  try {
+
+    await loadSupabase();
+
+  } catch (error) {
+
+    console.error(
+      'SUPABASE INIT ERROR:',
+      error
+    );
+
+    showStatus(
+      'تعذر الاتصال بخدمة المشاركة. حاول تحديث الصفحة.',
+      'error'
+    );
+
+    return;
+  }
+
+  document
+    .querySelectorAll('.filters button')
+    .forEach(button => {
+
+      button.addEventListener(
+        'click',
+        () => {
+
+          document
+            .querySelectorAll('.filters button')
+            .forEach(item =>
+              item.classList.remove('active')
+            );
+
+          button.classList.add('active');
+
+          filter = button.dataset.filter;
+
+          render();
+
+        }
+      );
+
+    });
+
+  if ($('search')) {
+    $('search').addEventListener(
+      'input',
+      render
+    );
+  }
+
+  const form = $('form');
+
+  if (form) {
+
+    form.addEventListener(
+      'submit',
+      submitParticipation
+    );
+
+  }
+
+  if ($('modal')) {
+
+    $('modal').addEventListener(
+      'keydown',
+      event => {
+
+        if (event.key === 'Escape') {
+          closeModal();
+        }
+
+      }
+    );
+
+  }
+
+  await loadSubmissions();
+}
+
+startApp();
    
