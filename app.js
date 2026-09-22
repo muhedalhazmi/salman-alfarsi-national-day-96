@@ -42,6 +42,7 @@ const $ = id =>
 ================================= */
 
 function esc(value) {
+
   return String(value ?? '').replace(
     /[&<>"']/g,
     char => ({
@@ -52,36 +53,53 @@ function esc(value) {
       "'": '&#039;'
     }[char])
   );
+
 }
 
 
-function showStatus(message, type = 'info') {
-  const el = $('formStatus');
+function showStatus(
+  message,
+  type = 'info'
+) {
+
+  const el =
+    $('formStatus');
 
   if (!el) return;
 
-  el.textContent = message;
-  el.className = `form-status ${type}`;
+  el.textContent =
+    message;
+
+  el.className =
+    `form-status ${type}`;
+
 }
 
 
 function setSubmitting(value) {
-  const button = $('submitButton');
+
+  const button =
+    $('submitButton');
 
   if (!button) return;
 
-  button.disabled = value;
+  button.disabled =
+    value;
 
-  button.textContent = value
-    ? 'جارٍ إرسال المشاركة…'
-    : 'إرسال للمراجعة ↗';
+  button.textContent =
+    value
+      ? 'جارٍ إرسال المشاركة…'
+      : 'إرسال للمراجعة ↗';
+
 }
 
 
 function getFileInput() {
+
   return document.querySelector(
     '#form input[type="file"]'
   );
+
 }
 
 
@@ -90,16 +108,22 @@ function getFileInput() {
 ================================= */
 
 function showSuccessMessage() {
+
   const old =
     document.getElementById(
       'successMessage'
     );
 
-  if (old) old.remove();
+  if (old) {
+    old.remove();
+  }
 
 
   const message =
-    document.createElement('div');
+    document.createElement(
+      'div'
+    );
+
 
   message.id =
     'successMessage';
@@ -107,53 +131,97 @@ function showSuccessMessage() {
 
   message.innerHTML = `
     <div style="
-      font-size:28px;
-      margin-bottom:8px;
-    ">✓</div>
+      font-size:42px;
+      margin-bottom:10px;
+      line-height:1;
+    ">
+      ✓
+    </div>
 
     <strong style="
       display:block;
-      font-size:18px;
-      margin-bottom:6px;
+      font-size:21px;
+      margin-bottom:10px;
     ">
       تم إرسال مشاركتك بنجاح
     </strong>
 
     <span style="
       display:block;
-      font-size:14px;
-      line-height:1.7;
+      font-size:15px;
+      line-height:1.9;
     ">
       شكرًا لمشاركتك الوطنية.
-      ستظهر المشاركة في الحائط الوطني
-      بعد اعتماد الإدارة.
+      <br>
+      تم استلام المشاركة وهي الآن
+      <br>
+      <strong>
+        بانتظار اعتماد الإدارة.
+      </strong>
     </span>
+
+    <button
+      type="button"
+      id="successCloseButton"
+      style="
+        margin-top:18px;
+        border:0;
+        padding:10px 24px;
+        border-radius:999px;
+        background:#e2c979;
+        color:#173e37;
+        font:inherit;
+        font-weight:800;
+        cursor:pointer;
+      "
+    >
+      حسنًا
+    </button>
   `;
 
 
   message.style.cssText = `
     position:fixed;
-    top:24px;
+    top:50%;
     left:50%;
-    transform:translateX(-50%);
-    z-index:999999;
-    width:min(90%,520px);
-    padding:20px 24px;
+    transform:translate(-50%,-50%);
+    z-index:2147483647;
+    width:min(90%,460px);
+    padding:30px 24px;
     background:#064c43;
     color:#fff;
-    border-radius:16px;
+    border-radius:24px;
     text-align:center;
-    box-shadow:0 12px 35px rgba(0,0,0,.25);
+    box-shadow:0 25px 80px rgba(0,0,0,.45);
     font-family:inherit;
   `;
 
 
-  document.body.appendChild(message);
+  document.body.appendChild(
+    message
+  );
 
 
-  setTimeout(() => {
-    message.remove();
-  }, 6000);
+  const closeButton =
+    document.getElementById(
+      'successCloseButton'
+    );
+
+
+  if (closeButton) {
+
+    closeButton.onclick =
+      () => {
+
+        message.remove();
+
+        location.hash =
+          'wall';
+
+      };
+
+  }
+
 }
 
 
@@ -162,7 +230,9 @@ function showSuccessMessage() {
 ================================= */
 
 function prepareForm() {
-  const form = $('form');
+
+  const form =
+    $('form');
 
   if (!form) return;
 
@@ -172,10 +242,13 @@ function prepareForm() {
 
 
   if (fileInput) {
-    fileInput.name = 'media';
+
+    fileInput.name =
+      'media';
 
     fileInput.accept =
       'image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime';
+
   }
 
 
@@ -184,7 +257,10 @@ function prepareForm() {
 
 
   if (submitButton) {
-    submitButton.type = 'submit';
+
+    submitButton.type =
+      'submit';
+
   }
 
 
@@ -193,11 +269,14 @@ function prepareForm() {
 
 
   if (status) {
+
     status.setAttribute(
       'aria-live',
       'polite'
     );
+
   }
+
 }
 
 
@@ -216,11 +295,37 @@ async function loadSupabase() {
       );
 
     return;
+
   }
 
 
   await new Promise(
     (resolve, reject) => {
+
+      const existing =
+        document.querySelector(
+          'script[data-supabase]'
+        );
+
+
+      if (existing) {
+
+        existing.addEventListener(
+          'load',
+          resolve,
+          { once: true }
+        );
+
+        existing.addEventListener(
+          'error',
+          reject,
+          { once: true }
+        );
+
+        return;
+
+      }
+
 
       const script =
         document.createElement(
@@ -232,28 +337,37 @@ async function loadSupabase() {
         'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
 
 
-      script.onload = resolve;
+      script.dataset.supabase =
+        'true';
 
 
-      script.onerror = () =>
-        reject(
-          new Error(
-            'تعذر تحميل مكتبة Supabase.'
-          )
-        );
+      script.onload =
+        resolve;
+
+
+      script.onerror =
+        () =>
+          reject(
+            new Error(
+              'تعذر تحميل مكتبة Supabase.'
+            )
+          );
 
 
       document.head.appendChild(
         script
       );
+
     }
   );
 
 
   if (!window.supabase) {
+
     throw new Error(
       'لم يتم تحميل Supabase بشكل صحيح.'
     );
+
   }
 
 
@@ -262,6 +376,7 @@ async function loadSupabase() {
       SUPABASE_URL,
       SUPABASE_PUBLISHABLE_KEY
     );
+
 }
 
 
@@ -308,66 +423,81 @@ async function loadSubmissions() {
     render();
 
     return;
+
   }
 
 
   data =
-    (rows || []).map(row => {
+    (rows || []).map(
+      row => {
 
-      let category =
-        'student';
+        let category =
+          'student';
 
 
-      if (
-        row.title?.includes(
-          'ولي أمر'
-        )
-      ) {
-        category = 'parent';
+        if (
+          row.title?.includes(
+            'ولي أمر'
+          )
+        ) {
 
-      } else if (
-        row.title?.includes(
-          'كادر'
-        )
-      ) {
-        category = 'staff';
+          category =
+            'parent';
 
-      } else if (
-        row.title?.includes(
-          'مجتمع'
-        )
-      ) {
-        category = 'community';
+        } else if (
+          row.title?.includes(
+            'كادر'
+          )
+        ) {
+
+          category =
+            'staff';
+
+        } else if (
+          row.title?.includes(
+            'مجتمع'
+          )
+        ) {
+
+          category =
+            'community';
+
+        }
+
+
+        return {
+
+          id:
+            row.id,
+
+          name:
+            row.student_name,
+
+          category:
+            category,
+
+          grade:
+            row.grade || '',
+
+          message:
+            row.description || '',
+
+          featured:
+            false,
+
+          mediaType:
+            row.media_type,
+
+          storagePath:
+            row.storage_path,
+
+          submittedAt:
+            row.submitted_at
+
+        };
+
       }
-
-
-      return {
-        id: row.id,
-
-        name:
-          row.student_name,
-
-        category,
-
-        grade:
-          row.grade || '',
-
-        message:
-          row.description || '',
-
-        featured:
-          false,
-
-        mediaType:
-          row.media_type,
-
-        storagePath:
-          row.storage_path,
-
-        submittedAt:
-          row.submitted_at
-      };
-    });
+    );
 
 
   signedUrls =
@@ -402,24 +532,31 @@ async function loadSubmissions() {
       signed
     ) {
 
-      signed.forEach(item => {
+      signed.forEach(
+        item => {
 
-        if (
-          item.path &&
-          item.signedUrl
-        ) {
-
-          signedUrls.set(
-            item.path,
+          if (
+            item.path &&
             item.signedUrl
-          );
+          ) {
+
+            signedUrls.set(
+              item.path,
+              item.signedUrl
+            );
+
+          }
+
         }
-      });
+      );
+
     }
+
   }
 
 
   render();
+
 }
 
 
@@ -442,62 +579,74 @@ function render() {
 
 
   const visible =
-    data.filter(item => {
+    data.filter(
+      item => {
 
-      const matchesFilter =
-        filter === 'all' ||
-        item.category === filter;
-
-
-      const text =
-        `${item.name} ${item.message} ${item.grade}`
-          .toLowerCase();
+        const matchesFilter =
+          filter === 'all' ||
+          item.category ===
+            filter;
 
 
-      const matchesSearch =
-        !q ||
-        text.includes(q);
+        const text =
+          `${item.name} ${item.message} ${item.grade}`
+            .toLowerCase();
 
 
-      return (
-        matchesFilter &&
-        matchesSearch
-      );
-    });
+        const matchesSearch =
+          !q ||
+          text.includes(q);
+
+
+        return (
+          matchesFilter &&
+          matchesSearch
+        );
+
+      }
+    );
 
 
   if ($('total')) {
+
     $('total').textContent =
       data.length;
+
   }
 
 
   if ($('students')) {
+
     $('students').textContent =
       data.filter(
         item =>
           item.category ===
           'student'
       ).length;
+
   }
 
 
   if ($('parents')) {
+
     $('parents').textContent =
       data.filter(
         item =>
           item.category ===
           'parent'
       ).length;
+
   }
 
 
   if ($('featured')) {
+
     $('featured').textContent =
       data.filter(
         item =>
           item.featured
       ).length;
+
   }
 
 
@@ -509,105 +658,115 @@ function render() {
 
 
   wall.innerHTML =
-    visible.map(item => {
+    visible
+      .map(
+        item => {
 
-      const url =
-        signedUrls.get(
-          item.storagePath
-        );
-
-
-      let visual =
-        '<div class="visual">🇸🇦</div>';
+          const url =
+            signedUrls.get(
+              item.storagePath
+            );
 
 
-      if (url) {
+          let visual =
+            '<div class="visual">🇸🇦</div>';
 
-        if (
-          item.mediaType ===
-          'video'
-        ) {
 
-          visual = `
-            <video
-              class="card-media"
-              src="${esc(url)}"
-              controls
-              preload="metadata"
-              playsinline>
-            </video>
+          if (url) {
+
+            if (
+              item.mediaType ===
+              'video'
+            ) {
+
+              visual = `
+                <video
+                  class="card-media"
+                  src="${esc(url)}"
+                  controls
+                  preload="metadata"
+                  playsinline>
+                </video>
+              `;
+
+            } else {
+
+              visual = `
+                <img
+                  class="card-media"
+                  src="${esc(url)}"
+                  alt="مشاركة وطنية من ${esc(item.name)}"
+                  loading="lazy">
+              `;
+
+            }
+
+          }
+
+
+          return `
+            <article class="card">
+
+              ${visual}
+
+              <div class="body">
+
+                <div class="meta">
+
+                  <span class="badge">
+                    ${esc(
+                      labels[
+                        item.category
+                      ] ||
+                      'مشاركة'
+                    )}
+                  </span>
+
+                  <span>
+                    ✓ معتمدة
+                  </span>
+
+                </div>
+
+                <p>
+                  ${esc(
+                    item.message
+                  )}
+                </p>
+
+                <div class="meta">
+
+                  <strong>
+                    ${esc(
+                      item.name
+                    )}
+                  </strong>
+
+                  <span>
+                    ${esc(
+                      item.grade
+                    )}
+                  </span>
+
+                </div>
+
+              </div>
+
+            </article>
           `;
 
-        } else {
-
-          visual = `
-            <img
-              class="card-media"
-              src="${esc(url)}"
-              alt="مشاركة وطنية من ${esc(item.name)}"
-              loading="lazy">
-          `;
         }
-      }
-
-
-      return `
-        <article class="card">
-
-          ${visual}
-
-          <div class="body">
-
-            <div class="meta">
-
-              <span class="badge">
-                ${esc(
-                  labels[
-                    item.category
-                  ] || 'مشاركة'
-                )}
-              </span>
-
-              <span>
-                ✓ معتمدة
-              </span>
-
-            </div>
-
-            <p>
-              ${esc(
-                item.message
-              )}
-            </p>
-
-            <div class="meta">
-
-              <strong>
-                ${esc(
-                  item.name
-                )}
-              </strong>
-
-              <span>
-                ${esc(
-                  item.grade
-                )}
-              </span>
-
-            </div>
-
-          </div>
-
-        </article>
-      `;
-
-    }).join('');
+      )
+      .join('');
 
 
   if ($('empty')) {
+
     $('empty').hidden =
       visible.length > 0;
+
   }
+
 }
 
 
@@ -622,10 +781,13 @@ function openModal(category) {
 
 
   if (!modal) {
+
     console.error(
       'MODAL NOT FOUND'
     );
+
     return;
+
   }
 
 
@@ -647,22 +809,29 @@ function openModal(category) {
 
     $('category').value =
       category;
+
   }
 
 
-  setTimeout(() => {
+  setTimeout(
+    () => {
 
-    const input =
-      $('form')?.querySelector(
-        'input[name="name"]'
-      );
+      const input =
+        $('form')?.querySelector(
+          'input[name="name"]'
+        );
 
 
-    if (input) {
-      input.focus();
-    }
+      if (input) {
 
-  }, 50);
+        input.focus();
+
+      }
+
+    },
+    50
+  );
+
 }
 
 
@@ -697,12 +866,14 @@ function closeModal() {
 
     $('formStatus').className =
       'form-status';
+
   }
+
 }
 
 
 /* =================================
-   تنظيف اسم الملف
+   اسم الملف
 ================================= */
 
 function sanitizeFileName(name) {
@@ -748,6 +919,7 @@ function sanitizeFileName(name) {
 
 
   return `${safe}-${Date.now()}.${ext}`;
+
 }
 
 
@@ -760,6 +932,7 @@ async function submitParticipation(
 ) {
 
   event.preventDefault();
+
   event.stopPropagation();
 
 
@@ -778,6 +951,7 @@ async function submitParticipation(
     );
 
     return;
+
   }
 
 
@@ -831,6 +1005,7 @@ async function submitParticipation(
     );
 
     return;
+
   }
 
 
@@ -846,6 +1021,7 @@ async function submitParticipation(
     );
 
     return;
+
   }
 
 
@@ -861,6 +1037,7 @@ async function submitParticipation(
     );
 
     return;
+
   }
 
 
@@ -875,6 +1052,7 @@ async function submitParticipation(
     );
 
     return;
+
   }
 
 
@@ -918,9 +1096,14 @@ async function submitParticipation(
           storagePath,
           file,
           {
-            cacheControl: '3600',
-            contentType: file.type,
-            upsert: false
+            cacheControl:
+              '3600',
+
+            contentType:
+              file.type,
+
+            upsert:
+              false
           }
         );
 
@@ -932,9 +1115,11 @@ async function submitParticipation(
         uploadError
       );
 
+
       throw new Error(
         `تعذر رفع الملف: ${uploadError.message}`
       );
+
     }
 
 
@@ -950,6 +1135,7 @@ async function submitParticipation(
       await supabase
         .from('submissions')
         .insert({
+
           id:
             submissionId,
 
@@ -976,6 +1162,7 @@ async function submitParticipation(
 
           status:
             'pending'
+
         });
 
 
@@ -987,30 +1174,51 @@ async function submitParticipation(
       );
 
 
-      await supabase.storage
-        .from('submissions')
-        .remove([
-          storagePath
-        ]);
+      try {
+
+        await supabase.storage
+          .from('submissions')
+          .remove([
+            storagePath
+          ]);
+
+      } catch (
+        cleanupError
+      ) {
+
+        console.error(
+          'STORAGE CLEANUP ERROR:',
+          cleanupError
+        );
+
+      }
 
 
       throw new Error(
         `تعذر تسجيل المشاركة: ${insertError.message}`
       );
+
     }
 
 
+    /*
+     * نجاح حقيقي:
+     * أولًا نظهر الرسالة،
+     * ثم نغلق النموذج.
+     */
+
     form.reset();
-
-
-    closeModal();
 
 
     showSuccessMessage();
 
 
-    location.hash =
-      'wall';
+    setTimeout(
+      () => {
+        closeModal();
+      },
+      100
+    );
 
 
     await loadSubmissions();
@@ -1029,10 +1237,13 @@ async function submitParticipation(
       'error'
     );
 
+
   } finally {
 
     setSubmitting(false);
+
   }
+
 }
 
 
@@ -1049,38 +1260,44 @@ function setupInterface() {
     .querySelectorAll(
       '.filters button'
     )
-    .forEach(button => {
+    .forEach(
+      button => {
 
-      button.addEventListener(
-        'click',
-        () => {
+        button.addEventListener(
+          'click',
+          () => {
 
-          document
-            .querySelectorAll(
-              '.filters button'
-            )
-            .forEach(item => {
+            document
+              .querySelectorAll(
+                '.filters button'
+              )
+              .forEach(
+                item => {
 
-              item.classList.remove(
-                'active'
+                  item.classList.remove(
+                    'active'
+                  );
+
+                }
               );
 
-            });
+
+            button.classList.add(
+              'active'
+            );
 
 
-          button.classList.add(
-            'active'
-          );
+            filter =
+              button.dataset.filter;
 
 
-          filter =
-            button.dataset.filter;
+            render();
 
+          }
+        );
 
-          render();
-        }
-      );
-    });
+      }
+    );
 
 
   if ($('search')) {
@@ -1089,6 +1306,7 @@ function setupInterface() {
       'input',
       render
     );
+
   }
 
 
@@ -1102,6 +1320,7 @@ function setupInterface() {
       'submit',
       submitParticipation
     );
+
   }
 
 
@@ -1117,10 +1336,14 @@ function setupInterface() {
         ) {
 
           closeModal();
+
         }
+
       }
     );
+
   }
+
 }
 
 
@@ -1131,8 +1354,7 @@ function setupInterface() {
 async function startApp() {
 
   /*
-   * الواجهة تعمل أولًا.
-   * لا ننتظر Supabase.
+   * تشغيل الواجهة أولًا
    */
 
   setupInterface();
@@ -1150,29 +1372,31 @@ async function startApp() {
     );
 
 
-    showStatus(
-      'تعذر الاتصال بخدمة المشاركة. حاول تحديث الصفحة.',
-      'error'
-    );
-
+    /*
+     * لا نعطل أزرار الواجهة
+     */
 
     return;
+
   }
 
 
   await loadSubmissions();
+
 }
 
 
 /* =================================
-   إتاحة الدوال لـ HTML
+   إتاحة الدوال للـ HTML
 ================================= */
 
 window.openModal =
   openModal;
 
+
 window.closeModal =
   closeModal;
+
 
 window.render =
   render;
