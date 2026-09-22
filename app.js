@@ -19,12 +19,17 @@ const ALLOWED_TYPES = new Set([
 
 const MAX_FILE_SIZE = 25 * 1024 * 1024;
 
-let supabase;
+let supabase = null;
 let data = [];
 let filter = 'all';
 let signedUrls = new Map();
 
 const $ = id => document.getElementById(id);
+
+
+/* =========================
+   أدوات عامة
+========================= */
 
 function esc(value) {
   return String(value ?? '').replace(
@@ -39,20 +44,16 @@ function esc(value) {
   );
 }
 
-function showStatus(message, type = 'info') {
-  let el = $('formStatus');
 
-  if (!el) {
-    el = document.createElement('div');
-    el.id = 'formStatus';
-    el.className = 'form-status';
-    const form = $('form');
-    if (form) form.appendChild(el);
-  }
+function showStatus(message, type = 'info') {
+  const el = $('formStatus');
+
+  if (!el) return;
 
   el.textContent = message;
   el.className = `form-status ${type}`;
 }
+
 
 function setSubmitting(value) {
   const button = $('submitButton');
@@ -60,16 +61,86 @@ function setSubmitting(value) {
   if (!button) return;
 
   button.disabled = value;
+
   button.textContent = value
-    ? 'جارٍ رفع المشاركة…'
+    ? 'جارٍ إرسال المشاركة…'
     : 'إرسال للمراجعة ↗';
 }
+
 
 function getFileInput() {
   return document.querySelector(
     '#form input[type="file"]'
   );
 }
+
+
+/* =========================
+   رسالة نجاح
+========================= */
+
+function showSuccessMessage() {
+  const old = document.getElementById(
+    'successMessage'
+  );
+
+  if (old) old.remove();
+
+  const message = document.createElement('div');
+
+  message.id = 'successMessage';
+
+  message.innerHTML = `
+    <div style="
+      font-size:28px;
+      margin-bottom:8px;
+    ">✓</div>
+
+    <strong style="
+      display:block;
+      font-size:18px;
+      margin-bottom:6px;
+    ">
+      تم إرسال مشاركتك بنجاح
+    </strong>
+
+    <span style="
+      display:block;
+      font-size:14px;
+      line-height:1.7;
+    ">
+      شكرًا لمشاركتك الوطنية.
+      ستظهر المشاركة في الحائط الوطني بعد اعتماد الإدارة.
+    </span>
+  `;
+
+  message.style.cssText = `
+    position:fixed;
+    top:24px;
+    left:50%;
+    transform:translateX(-50%);
+    z-index:999999;
+    width:min(90%,520px);
+    padding:20px 24px;
+    background:#064c43;
+    color:#fff;
+    border-radius:16px;
+    text-align:center;
+    box-shadow:0 12px 35px rgba(0,0,0,.25);
+    font-family:inherit;
+  `;
+
+  document.body.appendChild(message);
+
+  setTimeout(() => {
+    message.remove();
+  }, 6000);
+}
+
+
+/* =========================
+   تهيئة النموذج
+========================= */
 
 function prepareForm() {
   const form = $('form');
@@ -80,101 +151,119 @@ function prepareForm() {
 
   if (fileInput) {
     fileInput.name = 'media';
+
     fileInput.accept =
       'image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime';
   }
 
-  if (!$('submitButton')) {
-    const button =
-      form.querySelector('button[type="submit"]');
+  const submitButton = $('submitButton');
 
-    if (button) {
-      button.id = 'submitButton';
-      button.textContent = 'إرسال للمراجعة ↗';
-    }
+  if (submitButton) {
+    submitButton.type = 'submit';
   }
 
-  if (!$('formStatus')) {
-    const status = document.createElement('div');
-    status.id = 'formStatus';
-    status.className = 'form-status';
-    form.appendChild(status);
-  }
+  const status = $('formStatus');
 
-  if (!form.querySelector('input[name="consent"]')) {
-    const wrapper = document.createElement('label');
-
-    wrapper.className = 'consent';
-
-    wrapper.innerHTML = `
-      <input
-        type="checkbox"
-        name="consent"
-        required
-      >
-      <span>
-        أقرّ بأن لدي موافقة ولي الأمر على نشر المشاركة،
-        وأوافق على مراجعتها قبل عرضها في الحائط الوطني.
-      </span>
-    `;
-
-    const submitButton =
-      $('submitButton');
-
-    if (submitButton) {
-      form.insertBefore(wrapper, submitButton);
-    } else {
-      form.appendChild(wrapper);
-    }
-  }
-
-  const note = document.createElement('div');
-
-  note.style.cssText =
-    'font-size:13px;text-align:center;margin-top:8px;opacity:.75;';
-
-  note.textContent =
-    'ستظهر المشاركة بعد اعتماد الإدارة. الحد الأقصى للملف 25 MB.';
-
-  if (
-    !form.querySelector(
-      '[data-upload-note]'
-    )
-  ) {
-    note.dataset.uploadNote = 'true';
-    form.appendChild(note);
+  if (status) {
+    status.setAttribute(
+      'aria-live',
+      'polite'
+    );
   }
 }
 
+
+/* =========================
+   تحميل Supabase
+========================= */
+
 async function loadSupabase() {
+
   if (window.supabase) {
-    supabase = window.supabase.createClient(
-      SUPABASE_URL,
-      SUPABASE_PUBLISHABLE_KEY
-    );
+
+    supabase =
+      window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_PUBLISHABLE_KEY
+      );
 
     return;
   }
 
-  await new Promise((resolve, reject) => {
-    const script = document.createElement('script');
 
-    script.src =
-      'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+  await new Promise(
+    (resolve, reject) => {
 
-    script.onload = resolve;
-    script.onerror = reject;
+      const existing =
+        document.querySelector(
+          'script[data-supabase]'
+        );
 
-    document.head.appendChild(script);
-  });
+      if (existing) {
 
-  supabase = window.supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_PUBLISHABLE_KEY
+        existing.addEventListener(
+          'load',
+          resolve,
+          { once: true }
+        );
+
+        existing.addEventListener(
+          'error',
+          reject,
+          { once: true }
+        );
+
+        return;
+      }
+
+
+      const script =
+        document.createElement(
+          'script'
+        );
+
+      script.src =
+        'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+
+      script.dataset.supabase = 'true';
+
+      script.onload = resolve;
+
+      script.onerror = () =>
+        reject(
+          new Error(
+            'تعذر تحميل مكتبة Supabase.'
+          )
+        );
+
+      document.head.appendChild(
+        script
+      );
+    }
   );
+
+
+  if (!window.supabase) {
+    throw new Error(
+      'لم يتم تحميل Supabase بشكل صحيح.'
+    );
+  }
+
+
+  supabase =
+    window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_PUBLISHABLE_KEY
+    );
 }
 
+
+/* =========================
+   تحميل المشاركات المعتمدة
+========================= */
+
 async function loadSubmissions() {
+
   if (!supabase) return;
 
   const {
@@ -186,234 +275,389 @@ async function loadSubmissions() {
       'id,student_name,grade,title,description,media_type,storage_path,status,submitted_at'
     )
     .eq('status', 'approved')
-    .order('submitted_at', {
-      ascending: false
-    })
+    .order(
+      'submitted_at',
+      {
+        ascending: false
+      }
+    )
     .limit(100);
 
+
   if (error) {
-    console.error(error);
+
+    console.error(
+      'SUBMISSIONS SELECT ERROR:',
+      error
+    );
+
     data = [];
+
     render();
+
     return;
   }
 
-  data = (rows || []).map(row => ({
-    id: row.id,
-    name: row.student_name,
-    category:
-      row.title?.includes('ولي أمر')
-        ? 'parent'
-        : row.title?.includes('كادر')
-        ? 'staff'
-        : row.title?.includes('مجتمع')
-        ? 'community'
-        : 'student',
-    grade: row.grade || '',
-    message: row.description || '',
-    featured: false,
-    mediaType: row.media_type,
-    storagePath: row.storage_path,
-    submittedAt: row.submitted_at
-  }));
 
-  signedUrls = new Map();
+  data = (rows || []).map(
+    row => ({
 
-  const paths = data
-    .map(item => item.storagePath)
-    .filter(Boolean);
+      id: row.id,
+
+      name: row.student_name,
+
+      category:
+        row.title?.includes('ولي أمر')
+          ? 'parent'
+          : row.title?.includes('كادر')
+          ? 'staff'
+          : row.title?.includes('مجتمع')
+          ? 'community'
+          : 'student',
+
+      grade:
+        row.grade || '',
+
+      message:
+        row.description || '',
+
+      featured:
+        false,
+
+      mediaType:
+        row.media_type,
+
+      storagePath:
+        row.storage_path,
+
+      submittedAt:
+        row.submitted_at
+
+    })
+  );
+
+
+  signedUrls =
+    new Map();
+
+
+  const paths =
+    data
+      .map(
+        item =>
+          item.storagePath
+      )
+      .filter(Boolean);
+
 
   if (paths.length) {
+
     const {
       data: signed,
       error: signedError
-    } = await supabase.storage
-      .from('submissions')
-      .createSignedUrls(paths, 3600);
+    } =
+      await supabase.storage
+        .from('submissions')
+        .createSignedUrls(
+          paths,
+          3600
+        );
 
-    if (!signedError && signed) {
-      signed.forEach(item => {
-        if (item.path && item.signedUrl) {
-          signedUrls.set(
-            item.path,
+
+    if (
+      !signedError &&
+      signed
+    ) {
+
+      signed.forEach(
+        item => {
+
+          if (
+            item.path &&
             item.signedUrl
-          );
+          ) {
+
+            signedUrls.set(
+              item.path,
+              item.signedUrl
+            );
+          }
         }
-      });
+      );
     }
   }
+
 
   render();
 }
 
+
+/* =========================
+   رسم الحائط
+========================= */
+
 function render() {
-  const search = $('search');
 
-  const q = (
-    search?.value || ''
-  )
-    .trim()
-    .toLowerCase();
+  const search =
+    $('search');
 
-  const visible = data.filter(item =>
-    (filter === 'all' ||
-      item.category === filter) &&
+  const q =
     (
-      !q ||
-      `${item.name} ${item.message} ${item.grade}`
-        .toLowerCase()
-        .includes(q)
+      search?.value || ''
     )
-  );
+      .trim()
+      .toLowerCase();
+
+
+  const visible =
+    data.filter(
+      item =>
+
+        (
+          filter === 'all' ||
+          item.category === filter
+        )
+
+        &&
+
+        (
+          !q ||
+
+          `${item.name} ${item.message} ${item.grade}`
+            .toLowerCase()
+            .includes(q)
+        )
+    );
+
 
   if ($('total')) {
-    $('total').textContent = data.length;
+    $('total').textContent =
+      data.length;
   }
+
 
   if ($('students')) {
     $('students').textContent =
       data.filter(
-        x => x.category === 'student'
+        x =>
+          x.category === 'student'
       ).length;
   }
+
 
   if ($('parents')) {
     $('parents').textContent =
       data.filter(
-        x => x.category === 'parent'
+        x =>
+          x.category === 'parent'
       ).length;
   }
 
+
   if ($('featured')) {
     $('featured').textContent =
-      data.filter(x => x.featured).length;
+      data.filter(
+        x =>
+          x.featured
+      ).length;
   }
+
 
   if (!$('wallGrid')) return;
 
+
   $('wallGrid').innerHTML =
-    visible.map(item => {
+    visible
+      .map(
+        item => {
 
-      const url =
-        signedUrls.get(
-          item.storagePath
-        );
+          const url =
+            signedUrls.get(
+              item.storagePath
+            );
 
-      let visual =
-        '<div class="visual">🇸🇦</div>';
 
-      if (url) {
-        if (
-          item.mediaType === 'video'
-        ) {
-          visual = `
-            <video
-              class="card-media"
-              src="${esc(url)}"
-              controls
-              preload="metadata"
-              playsinline>
-            </video>
-          `;
-        } else {
-          visual = `
-            <img
-              class="card-media"
-              src="${esc(url)}"
-              alt="مشاركة وطنية من ${esc(item.name)}"
-              loading="lazy">
+          let visual =
+            '<div class="visual">🇸🇦</div>';
+
+
+          if (url) {
+
+            if (
+              item.mediaType ===
+              'video'
+            ) {
+
+              visual = `
+                <video
+                  class="card-media"
+                  src="${esc(url)}"
+                  controls
+                  preload="metadata"
+                  playsinline>
+                </video>
+              `;
+
+            } else {
+
+              visual = `
+                <img
+                  class="card-media"
+                  src="${esc(url)}"
+                  alt="مشاركة وطنية من ${esc(item.name)}"
+                  loading="lazy">
+              `;
+            }
+          }
+
+
+          return `
+            <article class="card">
+
+              ${visual}
+
+              <div class="body">
+
+                <div class="meta">
+
+                  <span class="badge">
+                    ${esc(
+                      labels[
+                        item.category
+                      ] || 'مشاركة'
+                    )}
+                  </span>
+
+                  <span>
+                    ✓ معتمدة
+                  </span>
+
+                </div>
+
+                <p>
+                  ${esc(
+                    item.message
+                  )}
+                </p>
+
+                <div class="meta">
+
+                  <strong>
+                    ${esc(
+                      item.name
+                    )}
+                  </strong>
+
+                  <span>
+                    ${esc(
+                      item.grade
+                    )}
+                  </span>
+
+                </div>
+
+              </div>
+
+            </article>
           `;
         }
-      }
+      )
+      .join('');
 
-      return `
-        <article class="card">
-          ${visual}
-
-          <div class="body">
-
-            <div class="meta">
-              <span class="badge">
-                ${esc(labels[item.category] || 'مشاركة')}
-              </span>
-
-              <span>✓ معتمدة</span>
-            </div>
-
-            <p>
-              ${esc(item.message)}
-            </p>
-
-            <div class="meta">
-              <strong>
-                ${esc(item.name)}
-              </strong>
-
-              <span>
-                ${esc(item.grade)}
-              </span>
-            </div>
-
-          </div>
-        </article>
-      `;
-
-    }).join('');
 
   if ($('empty')) {
+
     $('empty').hidden =
       visible.length > 0;
   }
 }
 
+
+/* =========================
+   فتح وإغلاق النافذة
+========================= */
+
 function openModal(category) {
-  const modal = $('modal');
+
+  const modal =
+    $('modal');
 
   if (!modal) return;
 
-  modal.classList.add('show');
+
+  modal.classList.add(
+    'show'
+  );
+
   modal.setAttribute(
     'aria-hidden',
     'false'
   );
 
+
   if (
     category &&
     $('category')
   ) {
-    $('category').value = category;
+
+    $('category').value =
+      category;
   }
 
-  setTimeout(() => {
-    const input =
-      $('form')?.querySelector(
-        'input[name="name"]'
-      );
 
-    if (input) input.focus();
-  }, 50);
+  setTimeout(
+    () => {
+
+      const input =
+        $('form')?.querySelector(
+          'input[name="name"]'
+        );
+
+      if (input) {
+        input.focus();
+      }
+
+    },
+    50
+  );
 }
 
+
 function closeModal() {
-  const modal = $('modal');
+
+  const modal =
+    $('modal');
 
   if (!modal) return;
 
-  modal.classList.remove('show');
+
+  modal.classList.remove(
+    'show'
+  );
 
   modal.setAttribute(
     'aria-hidden',
     'true'
   );
 
+
   if ($('formStatus')) {
-    $('formStatus').textContent = '';
+
+    $('formStatus').textContent =
+      '';
+
     $('formStatus').className =
       'form-status';
   }
 }
 
+
+/* =========================
+   اسم الملف
+========================= */
+
 function sanitizeFileName(name) {
+
   const ext =
     name.includes('.')
       ? name
@@ -422,283 +666,20 @@ function sanitizeFileName(name) {
           .toLowerCase()
       : 'bin';
 
-  const base = name
-    .replace(/\\/g, '/')
-    .split('/')
-    .pop()
-    .replace(/\.[^.]+$/, '');
 
-  const safe = base
-    .replace(
-      /[^a-zA-Z0-9_-]+/g,
-      '-'
-    )
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 80) ||
-    'submission';
-
-  return `${safe}-${Date.now()}.${ext}`;
-}
-
-async function submitParticipation(event) {
-  event.preventDefault();
-
-  const form =
-    event.currentTarget;
-
-  const fd =
-    new FormData(form);
-
-  const file =
-    fd.get('media') ||
-    getFileInput()?.files?.[0];
-
-  const name =
-    String(
-      fd.get('name') || ''
-    ).trim();
-
-  const category =
-    String(
-      fd.get('category') || ''
-    );
-
-  const grade =
-    String(
-      fd.get('grade') || ''
-    ).trim();
-
-  const message =
-    String(
-      fd.get('message') || ''
-    ).trim();
-
-  const consent =
-    fd.get('consent') === 'on';
-
-  if (
-    !file ||
-    !(file instanceof File)
-  ) {
-    showStatus(
-      'اختر ملف المشاركة أولًا.',
-      'error'
-    );
-    return;
-  }
-
-  if (
-    !ALLOWED_TYPES.has(
-      file.type
-    )
-  ) {
-    showStatus(
-      'نوع الملف غير مسموح. اختر صورة أو فيديو بصيغة مدعومة.',
-      'error'
-    );
-    return;
-  }
-
-  if (
-    file.size >
-    MAX_FILE_SIZE
-  ) {
-    showStatus(
-      'حجم الملف يتجاوز 25 MB.',
-      'error'
-    );
-    return;
-  }
-
-  if (
-    !name ||
-    !message ||
-    !consent ||
-    !labels[category]
-  ) {
-    showStatus(
-      'أكمل البيانات المطلوبة ووافق على الإقرار.',
-      'error'
-    );
-    return;
-  }
-
-  const mediaType =
-    file.type.startsWith(
-      'video/'
-    )
-      ? 'video'
-      : 'image';
-
-  const submissionId =
-    crypto.randomUUID();
-
-  const storagePath =
-    `${submissionId}/${mediaType}/${sanitizeFileName(file.name)}`;
-
-  const title =
-    `${labels[category]} - مشاركة اليوم الوطني`;
-
-  setSubmitting(true);
-
-  showStatus(
-    'جارٍ رفع الملف بأمان…',
-    'info'
-  );
-
-  try {
-
-    const {
-      error: uploadError
-    } = await supabase.storage
-      .from('submissions')
-      .upload(
-        storagePath,
-        file,
-        {
-          cacheControl: '3600',
-          contentType: file.type,
-          upsert: false
-        }
+  const base =
+    name
+      .replace(
+        /\\/g,
+        '/'
+      )
+      .split('/')
+      .pop()
+      .replace(
+        /\.[^.]+$/,
+        ''
       );
 
-    if (uploadError) {
-      console.error(
-        uploadError
-      );
 
-      throw new Error(
-        'تعذر رفع الملف. حاول مرة أخرى.'
-      );
-    }
-
-    showStatus(
-      'تم رفع الملف، جارٍ تسجيل المشاركة…',
-      'info'
-    );
-
-    const {
-      error: insertError
-    } = await supabase
-      .from('submissions')
-      .insert({
-        id: submissionId,
-        student_name: name,
-        grade: grade || null,
-        title: title,
-        description: message,
-        media_type: mediaType,
-        storage_path: storagePath,
-        guardian_consent: true,
-        status: 'pending'
-      });
-
-    if (insertError) {
-      console.error(
-        insertError
-      );
-
-      throw new Error(
-        'تم رفع الملف لكن تعذر تسجيل المشاركة.'
-      );
-    }
-
-    form.reset();
-
-    closeModal();
-
-    alert(
-      'تم استلام مشاركتك بنجاح، وستظهر بعد اعتماد الإدارة.'
-    );
-
-    location.hash = 'wall';
-
-    await loadSubmissions();
-
-  } catch (error) {
-
-    console.error(error);
-
-    showStatus(
-      error.message ||
-      'حدث خطأ غير متوقع.',
-      'error'
-    );
-
-  } finally {
-
-    setSubmitting(false);
-
-  }
-}
-
-async function startApp() {
-
-  prepareForm();
-
-  await loadSupabase();
-
-  document
-    .querySelectorAll(
-      '.filters button'
-    )
-    .forEach(button => {
-
-      button.addEventListener(
-        'click',
-        () => {
-
-          document
-            .querySelectorAll(
-              '.filters button'
-            )
-            .forEach(item =>
-              item.classList.remove(
-                'active'
-              )
-            );
-
-          button.classList.add(
-            'active'
-          );
-
-          filter =
-            button.dataset.filter;
-
-          render();
-        }
-      );
-
-    });
-
-  if ($('search')) {
-    $('search').addEventListener(
-      'input',
-      render
-    );
-  }
-
-  if ($('form')) {
-    $('form').addEventListener(
-      'submit',
-      submitParticipation
-    );
-  }
-
-  if ($('modal')) {
-    $('modal').addEventListener(
-      'keydown',
-      event => {
-        if (
-          event.key === 'Escape'
-        ) {
-          closeModal();
-        }
-      }
-    );
-  }
-
-  await loadSubmissions();
-}
-
-startApp();
+  const safe =
+   
