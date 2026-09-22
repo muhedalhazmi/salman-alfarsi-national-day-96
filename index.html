@@ -3,59 +3,121 @@
 
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#064c43">
+  <meta
+    name="viewport"
+    content="width=device-width,initial-scale=1"
+  >
 
-  <title>اليوم الوطني 96 | مدرسة سلمان الفارسي</title>
+  <meta
+    name="theme-color"
+    content="#064c43"
+  >
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <title>
+    اليوم الوطني 96 | مدرسة سلمان الفارسي
+  </title>
+
+  <link
+    rel="preconnect"
+    href="https://fonts.googleapis.com"
+  >
+
+  <link
+    rel="preconnect"
+    href="https://fonts.gstatic.com"
+    crossorigin
+  >
 
   <link
     href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap"
-    rel="stylesheet">
+    rel="stylesheet"
+  >
 
-  <link rel="stylesheet" href="styles.css">
+  <link
+    rel="stylesheet"
+    href="styles.css"
+  >
 </head>
 
+
 <body>
+
 
   <!-- =========================
        الشريط العلوي
   ========================== -->
+
   <header class="topbar">
 
     <div class="brand">
 
       <div class="ministry">
-        <div class="dots">•••</div>
-        <b>وزارة التعليم</b>
-        <small>Ministry of Education</small>
+
+        <div class="dots">
+          •••
+        </div>
+
+        <b>
+          وزارة التعليم
+        </b>
+
+        <small>
+          Ministry of Education
+        </small>
+
       </div>
 
+
       <div class="school">
+
         <img
           src="assets/school-logo.png"
           alt="شعار مدرسة سلمان الفارسي"
         >
 
         <div>
-          <strong>مدرسة سلمان الفارسي الابتدائية</strong>
-          <small>إدارة التعليم بمحافظة جدة</small>
+
+          <strong>
+            مدرسة سلمان الفارسي الابتدائية
+          </strong>
+
+          <small>
+            إدارة التعليم بمحافظة جدة
+          </small>
+
         </div>
+
       </div>
 
     </div>
 
-    <nav>
-      <a href="#home">الرئيسية</a>
-      <a href="#about">عن المناسبة</a>
-      <a href="#wall">المشاركات</a>
-      <a href="#categories">الفئات</a>
 
-      <button type="button" onclick="openModal()">
+    <nav>
+
+      <a href="#home">
+        الرئيسية
+      </a>
+
+      <a href="#about">
+        عن المناسبة
+      </a>
+
+      <a href="#wall">
+        المشاركات
+      </a>
+
+      <a href="#categories">
+        الفئات
+      </a>
+
+
+      <button
+        type="button"
+        onclick="openModal()"
+      >
         أضف مشاركتك
       </button>
+
     </nav>
 
   </header>
@@ -64,11 +126,16 @@
   <!-- =========================
        المحتوى الرئيسي
   ========================== -->
+
   <main id="home">
+
+
+    <!-- HERO -->
 
     <section class="hero">
 
       <div class="pattern"></div>
+
 
       <div class="hero-copy">
 
@@ -76,19 +143,24 @@
           اليوم الوطني السعودي 96
         </span>
 
+
         <div class="national">
           عزّنا <b>بطبعنا</b>
         </div>
+
 
         <h1>
           مشاركاتنا...
           <em>لوطنٍ أعظم</em>
         </h1>
 
+
         <p>
-          من طلابنا وأولياء أمورنا، نصنع معًا لوحة وطنية
-          تعبّر عن حبنا وولائنا وفخرنا بالمملكة.
+          من طلابنا وأولياء أمورنا،
+          نصنع معًا لوحة وطنية تعبّر عن
+          حبنا وولائنا وفخرنا بالمملكة.
         </p>
+
 
         <div class="actions">
 
@@ -100,11 +172,13 @@
             أضف مشاركتك الآن ↗
           </button>
 
+
           <a href="#wall">
             استكشف الحائط الوطني ↓
           </a>
 
         </div>
+
 
         <small class="slogan">
           ماضٍ عريق · حاضر مزدهر · مستقبل طموح
@@ -134,33 +208,64 @@
 
 
     <!-- الإحصائيات -->
-    <section class="stats" id="about">
+
+    <section
+      class="stats"
+      id="about"
+    >
 
       <div>
-        <b id="total">0</b>
-        <span>إجمالي المشاركات</span>
+        <b id="total">
+          0
+        </b>
+
+        <span>
+          إجمالي المشاركات
+        </span>
       </div>
 
-      <div>
-        <b id="students">0</b>
-        <span>الطلاب والطالبات</span>
-      </div>
 
       <div>
-        <b id="parents">0</b>
-        <span>أولياء الأمور</span>
+        <b id="students">
+          0
+        </b>
+
+        <span>
+          الطلاب والطالبات
+        </span>
       </div>
 
+
       <div>
-        <b id="featured">0</b>
-        <span>المشاركات المميزة</span>
+        <b id="parents">
+          0
+        </b>
+
+        <span>
+          أولياء الأمور
+        </span>
+      </div>
+
+
+      <div>
+        <b id="featured">
+          0
+        </b>
+
+        <span>
+          المشاركات المميزة
+        </span>
       </div>
 
     </section>
 
 
     <!-- الفئات -->
-    <section class="share" id="categories">
+
+    <section
+      class="share"
+      id="categories"
+    >
 
       <div class="heading">
 
@@ -168,14 +273,17 @@
           شاركنا بصمتك الوطنية
         </span>
 
+
         <h2>
           صوتك جزء من
           <b>حكاية الوطن</b>
         </h2>
 
+
         <p>
           كلمة، صورة، رسم، تصميم أو فيديو —
-          تُرسل المشاركة للمراجعة ثم تظهر في الحائط الوطني.
+          تُرسل المشاركة للمراجعة ثم تظهر
+          في الحائط الوطني.
         </p>
 
       </div>
@@ -187,6 +295,7 @@
           type="button"
           onclick="openModal('student')"
         >
+
           <strong>
             الطالب والطالبـة
           </strong>
@@ -194,6 +303,7 @@
           <small>
             إبداعات طلابنا وطالباتنا
           </small>
+
         </button>
 
 
@@ -201,6 +311,7 @@
           type="button"
           onclick="openModal('parent')"
         >
+
           <strong>
             ولي الأمر
           </strong>
@@ -208,6 +319,7 @@
           <small>
             كلمة وطنية من الأسرة
           </small>
+
         </button>
 
 
@@ -215,6 +327,7 @@
           type="button"
           onclick="openModal('staff')"
         >
+
           <strong>
             الكادر التعليمي
           </strong>
@@ -222,6 +335,7 @@
           <small>
             رسائل المعلمين والمعلمات
           </small>
+
         </button>
 
 
@@ -229,6 +343,7 @@
           type="button"
           onclick="openModal('community')"
         >
+
           <strong>
             المجتمع المحلي
           </strong>
@@ -236,6 +351,7 @@
           <small>
             مشاركات المجتمع
           </small>
+
         </button>
 
       </div>
@@ -244,11 +360,16 @@
 
 
     <!-- الحائط الوطني -->
-    <section class="wall-section" id="wall">
+
+    <section
+      class="wall-section"
+      id="wall"
+    >
 
       <div class="wall-head">
 
         <div>
+
           <span>
             الحائط الوطني
           </span>
@@ -256,6 +377,7 @@
           <h2>
             أحدث المشاركات
           </h2>
+
         </div>
 
 
@@ -269,12 +391,14 @@
             الكل
           </button>
 
+
           <button
             type="button"
             data-filter="student"
           >
             الطلاب
           </button>
+
 
           <button
             type="button"
@@ -283,12 +407,14 @@
             أولياء الأمور
           </button>
 
+
           <button
             type="button"
             data-filter="staff"
           >
             الكادر
           </button>
+
 
           <button
             type="button"
@@ -309,8 +435,8 @@
           type="search"
           placeholder="ابحث في المشاركات..."
           autocomplete="off"
-          oninput="render()"
         >
+
 
         <button
           type="button"
@@ -339,25 +465,58 @@
     </section>
 
 
-    <!-- أقسام إضافية -->
+    <!-- الأقسام الإضافية -->
+
     <section class="media">
 
       <div>
-        <b>✦</b>
-        <strong>المشاركات المميزة</strong>
-        <small>أبرز المشاركات المختارة</small>
+
+        <b>
+          ✦
+        </b>
+
+        <strong>
+          المشاركات المميزة
+        </strong>
+
+        <small>
+          أبرز المشاركات المختارة
+        </small>
+
       </div>
 
-      <div>
-        <b>▶</b>
-        <strong>فيديوهات وطنية</strong>
-        <small>إبداعات ومقاطع طلابنا</small>
-      </div>
 
       <div>
-        <b>▣</b>
-        <strong>معرض الصور</strong>
-        <small>صور فعاليات المدرسة</small>
+
+        <b>
+          ▶
+        </b>
+
+        <strong>
+          فيديوهات وطنية
+        </strong>
+
+        <small>
+          إبداعات ومقاطع طلابنا
+        </small>
+
+      </div>
+
+
+      <div>
+
+        <b>
+          ▣
+        </b>
+
+        <strong>
+          معرض الصور
+        </strong>
+
+        <small>
+          صور فعاليات المدرسة
+        </small>
+
       </div>
 
     </section>
@@ -368,6 +527,7 @@
   <!-- =========================
        التذييل
   ========================== -->
+
   <footer>
 
     <div class="footer-brand">
@@ -378,6 +538,7 @@
       >
 
       <div>
+
         <strong>
           مدرسة سلمان الفارسي الابتدائية
         </strong>
@@ -385,14 +546,20 @@
         <small>
           وزارة التعليم · إدارة التعليم بمحافظة جدة
         </small>
+
       </div>
 
     </div>
 
 
     <div class="footer-slogan">
+
       معًا... نصنع أثرًا وطنيًا<br>
-      <b>يليق بوطننا</b>
+
+      <b>
+        يليق بوطننا
+      </b>
+
     </div>
 
 
@@ -405,8 +572,9 @@
 
 
   <!-- =========================
-       نافذة إضافة المشاركة
+       نافذة المشاركة
   ========================== -->
+
   <div
     class="modal"
     id="modal"
@@ -426,6 +594,7 @@
       aria-labelledby="modalTitle"
     >
 
+
       <button
         type="button"
         class="close"
@@ -438,7 +607,10 @@
 
       <div class="modal-head">
 
-        <span>🇸🇦</span>
+        <span>
+          🇸🇦
+        </span>
+
 
         <div>
 
@@ -468,7 +640,9 @@
 
         <div class="grid">
 
+
           <label>
+
             الاسم
 
             <input
@@ -478,10 +652,12 @@
               maxlength="60"
               autocomplete="name"
             >
+
           </label>
 
 
           <label>
+
             الصفة
 
             <select
@@ -512,6 +688,7 @@
 
 
           <label>
+
             الصف الدراسي
 
             <input
@@ -520,10 +697,12 @@
               maxlength="40"
               placeholder="اختياري"
             >
+
           </label>
 
 
           <label class="full">
+
             الكلمة الوطنية
 
             <textarea
@@ -601,9 +780,80 @@
 
 
   <!-- =========================
-       Supabase
-       يجب تحميلها قبل app.js
+       فتح وإغلاق النافذة
+       يعملان مستقلين عن app.js
   ========================== -->
+
+  <script>
+
+    window.openModal = function(category) {
+
+      const modal =
+        document.getElementById('modal');
+
+      if (!modal) return;
+
+
+      modal.classList.add('show');
+
+      modal.setAttribute(
+        'aria-hidden',
+        'false'
+      );
+
+
+      if (
+        category &&
+        document.getElementById('category')
+      ) {
+
+        document.getElementById(
+          'category'
+        ).value = category;
+
+      }
+
+
+      setTimeout(function() {
+
+        const input =
+          document.querySelector(
+            '#form input[name="name"]'
+          );
+
+        if (input) {
+          input.focus();
+        }
+
+      }, 50);
+
+    };
+
+
+    window.closeModal = function() {
+
+      const modal =
+        document.getElementById('modal');
+
+      if (!modal) return;
+
+
+      modal.classList.remove('show');
+
+      modal.setAttribute(
+        'aria-hidden',
+        'true'
+      );
+
+    };
+
+  </script>
+
+
+  <!-- =========================
+       Supabase
+  ========================== -->
+
   <script
     src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
     crossorigin="anonymous">
@@ -611,7 +861,10 @@
 
 
   <!-- التطبيق -->
+
   <script src="app.js"></script>
 
+
 </body>
+
 </html>
