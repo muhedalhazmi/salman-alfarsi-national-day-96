@@ -2,7 +2,9 @@
 <html lang="ar" dir="rtl">
 
 <head>
+
   <meta charset="utf-8">
+
   <meta
     name="viewport"
     content="width=device-width,initial-scale=1"
@@ -37,6 +39,7 @@
     rel="stylesheet"
     href="styles.css"
   >
+
 </head>
 
 
@@ -117,12 +120,11 @@
       >
         أضف مشاركتك
       </button>
-      <a href="/admin.html">
-        دخول الإدارة
-      </a>
+
     </nav>
 
   </header>
+
 
 
   <!-- =========================
@@ -209,6 +211,7 @@
     </section>
 
 
+
     <!-- الإحصائيات -->
 
     <section
@@ -217,6 +220,7 @@
     >
 
       <div>
+
         <b id="total">
           0
         </b>
@@ -224,10 +228,12 @@
         <span>
           إجمالي المشاركات
         </span>
+
       </div>
 
 
       <div>
+
         <b id="students">
           0
         </b>
@@ -235,10 +241,12 @@
         <span>
           الطلاب والطالبات
         </span>
+
       </div>
 
 
       <div>
+
         <b id="parents">
           0
         </b>
@@ -246,10 +254,12 @@
         <span>
           أولياء الأمور
         </span>
+
       </div>
 
 
       <div>
+
         <b id="featured">
           0
         </b>
@@ -257,9 +267,11 @@
         <span>
           المشاركات المميزة
         </span>
+
       </div>
 
     </section>
+
 
 
     <!-- الفئات -->
@@ -359,6 +371,7 @@
       </div>
 
     </section>
+
 
 
     <!-- الحائط الوطني -->
@@ -467,6 +480,7 @@
     </section>
 
 
+
     <!-- الأقسام الإضافية -->
 
     <section class="media">
@@ -526,6 +540,7 @@
   </main>
 
 
+
   <!-- =========================
        التذييل
   ========================== -->
@@ -571,6 +586,7 @@
     </p>
 
   </footer>
+
 
 
   <!-- =========================
@@ -718,6 +734,10 @@
           </label>
 
 
+          <!-- =================================
+               المرفق اختياري
+          ================================== -->
+
           <label class="full">
 
             الصورة أو التصميم أو الفيديو
@@ -725,9 +745,19 @@
             <input
               type="file"
               name="media"
-              accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime"
-              required
+              accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime"
             >
+
+            <small
+              style="
+                display:block;
+                margin-top:6px;
+                opacity:.75;
+              "
+            >
+              اختياري — يمكنك إرسال الكلمة الوطنية
+              بدون إرفاق صورة أو فيديو.
+            </small>
 
           </label>
 
@@ -747,6 +777,7 @@
 
           </label>
 
+
         </div>
 
 
@@ -762,7 +793,7 @@
           class="upload-note"
         >
           ستظهر المشاركة بعد اعتماد الإدارة.
-          الحد الأقصى للملف 25 MB.
+          المرفق اختياري، والحد الأقصى لحجمه 25 MB.
         </div>
 
 
@@ -774,11 +805,13 @@
           إرسال للمراجعة ↗
         </button>
 
+
       </form>
 
     </div>
 
   </div>
+
 
 
   <!-- =========================
@@ -798,6 +831,7 @@
 
       modal.classList.add('show');
 
+
       modal.setAttribute(
         'aria-hidden',
         'false'
@@ -816,18 +850,22 @@
       }
 
 
-      setTimeout(function() {
+      setTimeout(
+        function() {
 
-        const input =
-          document.querySelector(
-            '#form input[name="name"]'
-          );
+          const input =
+            document.querySelector(
+              '#form input[name="name"]'
+            );
 
-        if (input) {
-          input.focus();
-        }
 
-      }, 50);
+          if (input) {
+            input.focus();
+          }
+
+        },
+        50
+      );
 
     };
 
@@ -840,7 +878,10 @@
       if (!modal) return;
 
 
-      modal.classList.remove('show');
+      modal.classList.remove(
+        'show'
+      );
+
 
       modal.setAttribute(
         'aria-hidden',
@@ -850,6 +891,7 @@
     };
 
   </script>
+
 
 
   <!-- =========================
