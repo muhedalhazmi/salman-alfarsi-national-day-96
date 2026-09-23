@@ -1,46 +1,914 @@
-<style>
-  #wallGrid {
-    width: 100%;
-    max-width: 100%;
-    min-width: 0;
-    overflow-x: hidden;
-    box-sizing: border-box;
-  }
+<!doctype html>
+<html lang="ar" dir="rtl">
 
-  #wallGrid img,
-  #wallGrid video {
-    display: block;
-    width: 100%;
-    max-width: 100%;
-    height: auto;
-    max-height: 650px;
-    object-fit: contain;
-    object-position: center;
-    box-sizing: border-box;
-    margin-left: auto;
-    margin-right: auto;
-  }
+<head>
 
-  #wallGrid > * {
-    max-width: 100%;
-    min-width: 0;
-    overflow: hidden;
-    box-sizing: border-box;
-  }
+  <meta charset="utf-8">
 
-  #wallGrid > * img,
-  #wallGrid > * video {
-    max-width: 100%;
-    min-width: 0;
-  }
+  <meta
+    name="viewport"
+    content="width=device-width,initial-scale=1"
+  >
 
-  @media (max-width: 768px) {
-    #wallGrid img,
-    #wallGrid video {
-      width: 100%;
-      max-width: 100%;
-      max-height: 520px;
-      object-fit: contain;
-    }
-  }
-</style>
+  <meta
+    name="theme-color"
+    content="#064c43"
+  >
+
+  <title>
+    اليوم الوطني 96 | مدرسة سلمان الفارسي
+  </title>
+
+  <link
+    rel="preconnect"
+    href="https://fonts.googleapis.com"
+  >
+
+  <link
+    rel="preconnect"
+    href="https://fonts.gstatic.com"
+    crossorigin
+  >
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap"
+    rel="stylesheet"
+  >
+
+  <link
+    rel="stylesheet"
+    href="styles.css"
+  >
+
+</head>
+
+
+<body>
+
+
+  <!-- =========================
+       الشريط العلوي
+  ========================== -->
+
+  <header class="topbar">
+
+    <div class="brand">
+
+      <div class="ministry">
+
+        <div class="dots">
+          •••
+        </div>
+
+        <b>
+          وزارة التعليم
+        </b>
+
+        <small>
+          Ministry of Education
+        </small>
+
+      </div>
+
+
+      <div class="school">
+
+        <img
+          src="assets/school-logo.png"
+          alt="شعار مدرسة سلمان الفارسي"
+        >
+
+        <div>
+
+          <strong>
+            مدرسة سلمان الفارسي الابتدائية
+          </strong>
+
+          <small>
+            إدارة التعليم بمحافظة جدة
+          </small>
+
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <nav>
+
+      <a href="#home">
+        الرئيسية
+      </a>
+
+      <a href="#about">
+        عن المناسبة
+      </a>
+
+      <a href="#wall">
+        المشاركات
+      </a>
+
+      <a href="#categories">
+        الفئات
+      </a>
+
+
+      <button
+        type="button"
+        onclick="openModal()"
+      >
+        أضف مشاركتك
+      </button>
+
+    </nav>
+
+  </header>
+
+
+
+  <!-- =========================
+       المحتوى الرئيسي
+  ========================== -->
+
+  <main id="home">
+
+
+    <!-- HERO -->
+
+    <section class="hero">
+
+      <div class="pattern"></div>
+
+
+      <div class="hero-copy">
+
+        <span class="eyebrow">
+          اليوم الوطني السعودي 96
+        </span>
+
+
+        <div class="national">
+          عزّنا <b>بطبعنا</b>
+        </div>
+
+
+        <h1>
+          مشاركاتنا...
+          <em>لوطنٍ أعظم</em>
+        </h1>
+
+
+        <p>
+          من طلابنا وأولياء أمورنا،
+          نصنع معًا لوحة وطنية تعبّر عن
+          حبنا وولائنا وفخرنا بالمملكة.
+        </p>
+
+
+        <div class="actions">
+
+          <button
+            type="button"
+            class="gold"
+            onclick="openModal()"
+          >
+            أضف مشاركتك الآن ↗
+          </button>
+
+
+          <a href="#wall">
+            استكشف الحائط الوطني ↓
+          </a>
+
+        </div>
+
+
+        <small class="slogan">
+          ماضٍ عريق · حاضر مزدهر · مستقبل طموح
+        </small>
+
+      </div>
+
+
+      <div class="hero-art">
+
+        <div class="sun"></div>
+
+        <div class="skyline">
+          <i></i>
+          <i></i>
+          <i></i>
+          <i></i>
+        </div>
+
+        <div class="flag">
+          🇸🇦
+        </div>
+
+      </div>
+
+    </section>
+
+
+
+    <!-- الإحصائيات -->
+
+    <section
+      class="stats"
+      id="about"
+    >
+
+      <div>
+
+        <b id="total">
+          0
+        </b>
+
+        <span>
+          إجمالي المشاركات
+        </span>
+
+      </div>
+
+
+      <div>
+
+        <b id="students">
+          0
+        </b>
+
+        <span>
+          الطلاب والطالبات
+        </span>
+
+      </div>
+
+
+      <div>
+
+        <b id="parents">
+          0
+        </b>
+
+        <span>
+          أولياء الأمور
+        </span>
+
+      </div>
+
+
+      <div>
+
+        <b id="featured">
+          0
+        </b>
+
+        <span>
+          المشاركات المميزة
+        </span>
+
+      </div>
+
+    </section>
+
+
+
+    <!-- الفئات -->
+
+    <section
+      class="share"
+      id="categories"
+    >
+
+      <div class="heading">
+
+        <span>
+          شاركنا بصمتك الوطنية
+        </span>
+
+
+        <h2>
+          صوتك جزء من
+          <b>حكاية الوطن</b>
+        </h2>
+
+
+        <p>
+          كلمة، صورة، رسم، تصميم أو فيديو —
+          تُرسل المشاركة للمراجعة ثم تظهر
+          في الحائط الوطني.
+        </p>
+
+      </div>
+
+
+      <div class="categories">
+
+        <button
+          type="button"
+          onclick="openModal('student')"
+        >
+
+          <strong>
+            الطالب والطالبـة
+          </strong>
+
+          <small>
+            إبداعات طلابنا وطالباتنا
+          </small>
+
+        </button>
+
+
+        <button
+          type="button"
+          onclick="openModal('parent')"
+        >
+
+          <strong>
+            ولي الأمر
+          </strong>
+
+          <small>
+            كلمة وطنية من الأسرة
+          </small>
+
+        </button>
+
+
+        <button
+          type="button"
+          onclick="openModal('staff')"
+        >
+
+          <strong>
+            الكادر التعليمي
+          </strong>
+
+          <small>
+            رسائل المعلمين والمعلمات
+          </small>
+
+        </button>
+
+
+        <button
+          type="button"
+          onclick="openModal('community')"
+        >
+
+          <strong>
+            المجتمع المحلي
+          </strong>
+
+          <small>
+            مشاركات المجتمع
+          </small>
+
+        </button>
+
+      </div>
+
+    </section>
+
+
+
+    <!-- الحائط الوطني -->
+
+    <section
+      class="wall-section"
+      id="wall"
+    >
+
+      <div class="wall-head">
+
+        <div>
+
+          <span>
+            الحائط الوطني
+          </span>
+
+          <h2>
+            أحدث المشاركات
+          </h2>
+
+        </div>
+
+
+        <div class="filters">
+
+          <button
+            type="button"
+            class="active"
+            data-filter="all"
+          >
+            الكل
+          </button>
+
+
+          <button
+            type="button"
+            data-filter="student"
+          >
+            الطلاب
+          </button>
+
+
+          <button
+            type="button"
+            data-filter="parent"
+          >
+            أولياء الأمور
+          </button>
+
+
+          <button
+            type="button"
+            data-filter="staff"
+          >
+            الكادر
+          </button>
+
+
+          <button
+            type="button"
+            data-filter="community"
+          >
+            المجتمع
+          </button>
+
+        </div>
+
+      </div>
+
+
+      <div class="toolbar">
+
+        <input
+          id="search"
+          type="search"
+          placeholder="ابحث في المشاركات..."
+          autocomplete="off"
+        >
+
+
+        <button
+          type="button"
+          onclick="openModal()"
+        >
+          ＋ مشاركة جديدة
+        </button>
+
+      </div>
+
+
+      <div
+        class="wall"
+        id="wallGrid"
+      ></div>
+
+
+      <div
+        id="empty"
+        class="empty"
+        hidden
+      >
+        لا توجد مشاركات مطابقة.
+      </div>
+
+    </section>
+
+
+
+    <!-- الأقسام الإضافية -->
+
+    <section class="media">
+
+      <div>
+
+        <b>
+          ✦
+        </b>
+
+        <strong>
+          المشاركات المميزة
+        </strong>
+
+        <small>
+          أبرز المشاركات المختارة
+        </small>
+
+      </div>
+
+
+      <div>
+
+        <b>
+          ▶
+        </b>
+
+        <strong>
+          فيديوهات وطنية
+        </strong>
+
+        <small>
+          إبداعات ومقاطع طلابنا
+        </small>
+
+      </div>
+
+
+      <div>
+
+        <b>
+          ▣
+        </b>
+
+        <strong>
+          معرض الصور
+        </strong>
+
+        <small>
+          صور فعاليات المدرسة
+        </small>
+
+      </div>
+
+    </section>
+
+  </main>
+
+
+
+  <!-- =========================
+       التذييل
+  ========================== -->
+
+  <footer>
+
+    <div class="footer-brand">
+
+      <img
+        src="assets/school-logo.png"
+        alt="شعار المدرسة"
+      >
+
+      <div>
+
+        <strong>
+          مدرسة سلمان الفارسي الابتدائية
+        </strong>
+
+        <small>
+          وزارة التعليم · إدارة التعليم بمحافظة جدة
+        </small>
+
+      </div>
+
+    </div>
+
+
+    <div class="footer-slogan">
+
+      معًا... نصنع أثرًا وطنيًا<br>
+
+      <b>
+        يليق بوطننا
+      </b>
+
+    </div>
+
+
+    <p>
+      © 2026 مدرسة سلمان الفارسي الابتدائية ·
+      اليوم الوطني السعودي 96
+    </p>
+
+  </footer>
+
+
+
+  <!-- =========================
+       نافذة المشاركة
+  ========================== -->
+
+  <div
+    class="modal"
+    id="modal"
+    aria-hidden="true"
+  >
+
+    <div
+      class="backdrop"
+      onclick="closeModal()"
+    ></div>
+
+
+    <div
+      class="box"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modalTitle"
+    >
+
+
+      <button
+        type="button"
+        class="close"
+        onclick="closeModal()"
+        aria-label="إغلاق"
+      >
+        ×
+      </button>
+
+
+      <div class="modal-head">
+
+        <span>
+          🇸🇦
+        </span>
+
+
+        <div>
+
+          <small>
+            اليوم الوطني السعودي 96
+          </small>
+
+          <h2 id="modalTitle">
+            أضف مشاركتك
+          </h2>
+
+        </div>
+
+      </div>
+
+
+      <p>
+        ستظهر المشاركة بعد اعتماد الإدارة.
+      </p>
+
+
+      <form
+        id="form"
+        enctype="multipart/form-data"
+        novalidate
+      >
+
+        <div class="grid">
+
+
+          <label>
+
+            الاسم
+
+            <input
+              type="text"
+              name="name"
+              required
+              maxlength="60"
+              autocomplete="name"
+            >
+
+          </label>
+
+
+          <label>
+
+            الصفة
+
+            <select
+              name="category"
+              id="category"
+              required
+            >
+
+              <option value="student">
+                طالب / طالبة
+              </option>
+
+              <option value="parent">
+                ولي أمر
+              </option>
+
+              <option value="staff">
+                كادر تعليمي
+              </option>
+
+              <option value="community">
+                مجتمع محلي
+              </option>
+
+            </select>
+
+          </label>
+
+
+          <label>
+
+            الصف الدراسي
+
+            <input
+              type="text"
+              name="grade"
+              maxlength="40"
+              placeholder="اختياري"
+            >
+
+          </label>
+
+
+          <label class="full">
+
+            الكلمة الوطنية
+
+            <textarea
+              name="message"
+              required
+              maxlength="500"
+              rows="5"
+              placeholder="اكتب كلمتك الوطنية..."
+            ></textarea>
+
+          </label>
+
+
+          <!-- =================================
+               المرفق اختياري
+          ================================== -->
+
+          <label class="full">
+
+            الصورة أو التصميم أو الفيديو
+
+            <input
+              type="file"
+              name="media"
+              accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime"
+            >
+
+            <small
+              style="
+                display:block;
+                margin-top:6px;
+                opacity:.75;
+              "
+            >
+              اختياري — يمكنك إرسال الكلمة الوطنية
+              بدون إرفاق صورة أو فيديو.
+            </small>
+
+          </label>
+
+
+          <label class="full consent">
+
+            <input
+              type="checkbox"
+              name="consent"
+              required
+            >
+
+            <span>
+              أقرّ بأن لدي موافقة ولي الأمر على نشر المشاركة،
+              وأوافق على مراجعتها قبل عرضها في الحائط الوطني.
+            </span>
+
+          </label>
+
+
+        </div>
+
+
+        <div
+          id="formStatus"
+          class="form-status"
+          aria-live="polite"
+        ></div>
+
+
+        <div
+          data-upload-note
+          class="upload-note"
+        >
+          ستظهر المشاركة بعد اعتماد الإدارة.
+          المرفق اختياري، والحد الأقصى لحجمه 25 MB.
+        </div>
+
+
+        <button
+          type="submit"
+          id="submitButton"
+          class="submit"
+        >
+          إرسال للمراجعة ↗
+        </button>
+
+
+      </form>
+
+    </div>
+
+  </div>
+
+
+
+  <!-- =========================
+       فتح وإغلاق النافذة
+       يعملان مستقلين عن app.js
+  ========================== -->
+
+  <script>
+
+    window.openModal = function(category) {
+
+      const modal =
+        document.getElementById('modal');
+
+      if (!modal) return;
+
+
+      modal.classList.add('show');
+
+
+      modal.setAttribute(
+        'aria-hidden',
+        'false'
+      );
+
+
+      if (
+        category &&
+        document.getElementById('category')
+      ) {
+
+        document.getElementById(
+          'category'
+        ).value = category;
+
+      }
+
+
+      setTimeout(
+        function() {
+
+          const input =
+            document.querySelector(
+              '#form input[name="name"]'
+            );
+
+
+          if (input) {
+            input.focus();
+          }
+
+        },
+        50
+      );
+
+    };
+
+
+    window.closeModal = function() {
+
+      const modal =
+        document.getElementById('modal');
+
+      if (!modal) return;
+
+
+      modal.classList.remove(
+        'show'
+      );
+
+
+      modal.setAttribute(
+        'aria-hidden',
+        'true'
+      );
+
+    };
+
+  </script>
+
+
+
+  <!-- =========================
+       Supabase
+  ========================== -->
+
+  <script
+    src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
+    crossorigin="anonymous">
+  </script>
+
+
+  <!-- التطبيق -->
+
+  <script src="app.js"></script>
+
+
+</body>
+
+</html>
