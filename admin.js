@@ -1,941 +1,866 @@
-(() => {
-  // منع تشغيل الملف مرتين إذا تم تحميل admin.js أكثر من مرة
-  if (window.__SALMAN_ADMIN_LOADED__) {
-    console.warn('admin.js تم تحميله مسبقًا، تم تجاهل النسخة المكررة.');
+const SUPABASE_URL = 'https://sargzcxvmfwgttnshqzo.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_MaYiH9mSbYqxp-zFN5_YZw_hdcllh_w';
+
+const ADMIN_EMAIL = 'muhedalhazmi@gmail.com';
+const BUCKET = 'submissions';
+
+const supabase = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
+
+let currentStatus = 'pending';
+let rows = [];
+
+const $ = (id) => document.getElementById(id);
+
+/* =========================
+   Helpers
+========================= */
+
+function showStatus(element, message, type = 'info') {
+  if (!element) return;
+
+  element.textContent = message;
+  element.className = `status ${type}`;
+}
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function formatDate(value) {
+  if (!value) return 'غير محدد';
+
+  try {
+    return new Intl.DateTimeFormat('ar-SA', {
+      dateStyle: 'medium',
+      timeStyle: 'short'
+    }).format(new Date(value));
+  } catch {
+    return 'غير محدد';
+  }
+}
+
+function categoryFromTitle(title) {
+  const value = String(title || '');
+
+  if (value.startsWith('الطلاب')) {
+    return 'الطلاب';
+  }
+
+  if (value.startsWith('أولياء الأمور')) {
+    return 'أولياء الأمور';
+  }
+
+  if (value.startsWith('الكادر')) {
+    return 'الكادر';
+  }
+
+  if (value.startsWith('المجتمع')) {
+    return 'المجتمع';
+  }
+
+  return '—';
+}
+
+function getSubmissionDate(row) {
+  /*
+    جدول submissions الذي فحصناه لا يحتوي submitted_at.
+    نحاول استخدام created_at إن وجد،
+    وإلا نعرض "غير محدد".
+  */
+  return row.created_at || row.createdAt || null;
+}
+
+/* =========================
+   Authentication
+========================= */
+
+async function sendMagicLink() {
+  const emailInput = $('email');
+  const status = $('loginStatus');
+
+  if (!emailInput || !status) return;
+
+  const email = emailInput.value.trim().toLowerCase();
+
+  if (email !== ADMIN_EMAIL) {
+    showStatus(
+      status,
+      'هذا البريد غير مخول لدخول لوحة الإدارة.',
+      'error'
+    );
     return;
   }
 
-  window.__SALMAN_ADMIN_LOADED__ = true;
-
-  const SUPABASE_URL = 'https://sargzcxvmfwgttnshqzo.supabase.co';
-  const SUPABASE_KEY = 'sb_publishable_MaYiH9mSbYqxp-zFN5_YZw_hdcllh_w';
-  const ADMIN_EMAIL = 'muhedalhazmi@gmail.com';
-  const BUCKET = 'submissions';
-
-  // إنشاء عميل Supabase باسم مختلف لتجنب أي تعارض
-  const sb = window.supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_KEY
+  showStatus(
+    status,
+    'جارٍ إرسال رابط الدخول…',
+    'info'
   );
 
-  let currentStatus = 'pending';
-  let rows = [];
+  const redirectTo =
+    `${window.location.origin}${window.location.pathname}`;
 
-  const $ = (id) => document.getElementById(id);
-
-  function showStatus(el, message, type = 'info') {
-    if (!el) return;
-
-    el.textContent = message;
-    el.className = `status ${type}`;
-  }
-
-  function formatDate(value) {
-    if (!value) return '—';
-
-    try {
-      return new Intl.DateTimeFormat('ar-SA', {
-        dateStyle: 'medium',
-        timeStyle: 'short'
-      }).format(new Date(value));
-    } catch {
-      return value;
+  const { error } = await supabase.auth.signInWithOtp({
+    email,
+    options: {
+      emailRedirectTo: redirectTo,
+      shouldCreateUser: false
     }
-  }
+  });
 
-  function escapeHtml(value) {
-    return String(value ?? '')
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;');
-  }
-
-  function categoryFromTitle(title) {
-    const value = String(title || '');
-
-    if (value.startsWith('الطلاب')) {
-      return 'الطلاب';
-    }
-
-    if (value.startsWith('أولياء الأمور')) {
-      return 'أولياء الأمور';
-    }
-
-    if (value.startsWith('الكادر')) {
-      return 'الكادر';
-    }
-
-    if (value.startsWith('المجتمع')) {
-      return 'المجتمع';
-    }
-
-    return '—';
-  }
-
-  // =========================================================
-  // إرسال رابط الدخول
-  // =========================================================
-
-  async function sendMagicLink() {
-    const emailInput = $('email');
-    const status = $('loginStatus');
-
-    if (!emailInput) {
-      console.error('لم يتم العثور على حقل البريد الإلكتروني.');
-      return;
-    }
-
-    const email = emailInput.value.trim().toLowerCase();
-
-    if (!email) {
-      showStatus(
-        status,
-        'أدخل البريد الإلكتروني أولًا.',
-        'error'
-      );
-      return;
-    }
-
-    if (email !== ADMIN_EMAIL) {
-      showStatus(
-        status,
-        'هذا البريد غير مخول لدخول لوحة الإدارة.',
-        'error'
-      );
-      return;
-    }
+  if (error) {
+    console.error('MAGIC LINK ERROR:', error);
 
     showStatus(
       status,
-      'جارٍ إرسال رابط الدخول…',
-      'info'
+      `تعذر إرسال رابط الدخول: ${error.message}`,
+      'error'
     );
 
-    // العودة إلى نفس صفحة الإدارة بعد الضغط على الرابط
-    const redirectTo =
-      `${window.location.origin}${window.location.pathname}`;
-
-    try {
-      const { error } = await sb.auth.signInWithOtp({
-        email,
-        options: {
-          emailRedirectTo: redirectTo,
-          shouldCreateUser: false
-        }
-      });
-
-      if (error) {
-        console.error('MAGIC LINK ERROR:', error);
-
-        showStatus(
-          status,
-          `تعذر إرسال رابط الدخول: ${error.message}`,
-          'error'
-        );
-
-        return;
-      }
-
-      showStatus(
-        status,
-        'تم إرسال رابط الدخول إلى بريدك الإلكتروني. افتح أحدث رسالة واضغط الرابط مرة واحدة فقط.',
-        'success'
-      );
-
-    } catch (error) {
-      console.error('MAGIC LINK EXCEPTION:', error);
-
-      showStatus(
-        status,
-        `حدث خطأ أثناء إرسال الرابط: ${error.message || error}`,
-        'error'
-      );
-    }
+    return;
   }
 
-  // =========================================================
-  // التحقق من المستخدم
-  // =========================================================
+  showStatus(
+    status,
+    'تم إرسال رابط الدخول إلى البريد الإلكتروني. افتح أحدث رسالة واضغط الرابط مرة واحدة.',
+    'success'
+  );
+}
 
-  async function getVerifiedUser() {
-    try {
-      const { data, error } = await sb.auth.getUser();
+async function getVerifiedUser() {
+  const { data, error } = await supabase.auth.getUser();
 
-      if (error) {
-        console.error('GET USER ERROR:', error);
-        return null;
-      }
-
-      if (!data || !data.user) {
-        return null;
-      }
-
-      const email = String(
-        data.user.email || ''
-      ).toLowerCase();
-
-      if (email !== ADMIN_EMAIL) {
-        await sb.auth.signOut({
-          scope: 'local'
-        });
-
-        return null;
-      }
-
-      return data.user;
-
-    } catch (error) {
-      console.error('GET USER EXCEPTION:', error);
-      return null;
-    }
+  if (error || !data?.user) {
+    return null;
   }
 
-  // =========================================================
-  // الإحصاءات
-  // =========================================================
+  const email = String(
+    data.user.email || ''
+  ).toLowerCase();
 
-  async function loadStats() {
-    const { data, error } = await sb
-      .from('submissions')
-      .select('status');
-
-    if (error) {
-      console.error('STATS ERROR:', error);
-
-      throw new Error(
-        `تعذر قراءة الإحصاءات: ${error.message}`
-      );
-    }
-
-    const counts = {
-      pending: 0,
-      approved: 0,
-      rejected: 0
-    };
-
-    (data || []).forEach((row) => {
-      if (
-        Object.prototype.hasOwnProperty.call(
-          counts,
-          row.status
-        )
-      ) {
-        counts[row.status]++;
-      }
+  if (email !== ADMIN_EMAIL) {
+    await supabase.auth.signOut({
+      scope: 'local'
     });
 
-    const pendingCount = $('pendingCount');
-    const approvedCount = $('approvedCount');
-    const rejectedCount = $('rejectedCount');
-
-    if (pendingCount) {
-      pendingCount.textContent = counts.pending;
-    }
-
-    if (approvedCount) {
-      approvedCount.textContent = counts.approved;
-    }
-
-    if (rejectedCount) {
-      rejectedCount.textContent = counts.rejected;
-    }
+    return null;
   }
 
-  // =========================================================
-  // روابط الصور والفيديو
-  // =========================================================
+  return data.user;
+}
 
-  async function getMediaUrl(path) {
-    if (!path) {
-      return '';
-    }
+/* =========================
+   Statistics
+========================= */
 
-    const { data, error } = await sb.storage
-      .from(BUCKET)
-      .createSignedUrl(path, 3600);
+async function loadStats() {
+  const { data, error } = await supabase
+    .from('submissions')
+    .select('status');
 
-    if (error) {
-      console.error(
-        'SIGNED URL ERROR:',
-        error
-      );
+  if (error) {
+    console.error('STATS ERROR:', error);
 
-      return '';
-    }
-
-    return data?.signedUrl || '';
+    throw new Error(
+      `تعذر قراءة الإحصاءات: ${error.message}`
+    );
   }
 
-  // =========================================================
-  // تحميل المشاركات
-  // =========================================================
+  const counts = {
+    pending: 0,
+    approved: 0,
+    rejected: 0
+  };
 
-  async function loadRows() {
-    const list = $('list');
-
-    if (!list) {
-      console.error(
-        'لم يتم العثور على عنصر المشاركات #list'
-      );
-
-      return;
-    }
-
-    list.innerHTML =
-      '<div class="empty">جارٍ تحميل المشاركات…</div>';
-
-    const { data, error } = await sb
-      .from('submissions')
-      .select('*')
-      .eq('status', currentStatus)
-      .order('submitted_at', {
-        ascending: false
-      });
-
-    if (error) {
-      console.error(
-        'LOAD ROWS ERROR:',
-        error
-      );
-
-      list.innerHTML =
-        `<div class="empty">${
-          escapeHtml(
-            `تعذر تحميل المشاركات: ${error.message}`
-          )
-        }</div>`;
-
-      return;
-    }
-
-    rows = Array.isArray(data)
-      ? data
-      : [];
-
-    const cards = [];
-
-    for (const row of rows) {
-      cards.push(
-        await renderRow(row)
-      );
-    }
-
-    list.innerHTML = cards.length
-      ? cards.join('')
-      : '<div class="empty">لا توجد مشاركات في هذا القسم.</div>';
-  }
-
-  // =========================================================
-  // رسم المشاركة
-  // =========================================================
-
-  async function renderRow(row) {
-    const mediaUrl =
-      await getMediaUrl(
-        row.storage_path
-      );
-
-    const title =
-      escapeHtml(
-        row.title || 'مشاركة وطنية'
-      );
-
-    const name =
-      escapeHtml(
-        row.student_name || 'مشارك'
-      );
-
-    const grade =
-      escapeHtml(
-        row.grade || 'غير محدد'
-      );
-
-    const description =
-      escapeHtml(
-        row.description || ''
-      );
-
-    const category =
-      escapeHtml(
-        categoryFromTitle(row.title)
-      );
-
-    const mediaType =
-      String(
-        row.media_type || ''
-      );
-
-    let media =
-      '<div class="media">لا توجد معاينة</div>';
-
+  for (const row of data || []) {
     if (
-      mediaUrl &&
-      mediaType === 'video'
+      Object.prototype.hasOwnProperty.call(
+        counts,
+        row.status
+      )
     ) {
-      media = `
-        <div class="media">
-          <video
-            src="${mediaUrl}"
-            controls
-            preload="metadata">
-          </video>
-        </div>
-      `;
-    } else if (mediaUrl) {
-      media = `
-        <div class="media">
-          <img
-            src="${mediaUrl}"
-            alt="${title}"
-            loading="lazy">
-        </div>
-      `;
+      counts[row.status]++;
     }
+  }
 
-    let actionButtons = '';
+  $('pendingCount').textContent = counts.pending;
+  $('approvedCount').textContent = counts.approved;
+  $('rejectedCount').textContent = counts.rejected;
+}
 
-    if (currentStatus === 'pending') {
+/* =========================
+   Storage
+========================= */
 
-      actionButtons = `
-        <button
-          class="btn approve"
-          type="button"
-          data-action="approve"
-          data-id="${escapeHtml(row.id)}">
-          اعتماد ونشر
-        </button>
+async function getMediaUrl(path) {
+  if (!path) {
+    return '';
+  }
 
-        <button
-          class="btn reject"
-          type="button"
-          data-action="reject"
-          data-id="${escapeHtml(row.id)}">
-          رفض
-        </button>
+  const { data, error } = await supabase.storage
+    .from(BUCKET)
+    .createSignedUrl(path, 3600);
 
-        <button
-          class="btn delete"
-          type="button"
-          data-action="delete"
-          data-id="${escapeHtml(row.id)}">
-          حذف نهائي
-        </button>
-      `;
+  if (error) {
+    console.error(
+      'SIGNED URL ERROR:',
+      error
+    );
 
-    } else if (currentStatus === 'approved') {
+    return '';
+  }
 
-      actionButtons = `
-        <button
-          class="btn delete"
-          type="button"
-          data-action="delete"
-          data-id="${escapeHtml(row.id)}">
-          حذف نهائي
-        </button>
-      `;
+  return data?.signedUrl || '';
+}
 
-    } else {
+/* =========================
+   Load submissions
+========================= */
 
-      actionButtons = `
-        <button
-          class="btn approve"
-          type="button"
-          data-action="approve"
-          data-id="${escapeHtml(row.id)}">
-          اعتماد ونشر
-        </button>
+async function loadRows() {
+  const list = $('list');
 
-        <button
-          class="btn delete"
-          type="button"
-          data-action="delete"
-          data-id="${escapeHtml(row.id)}">
-          حذف نهائي
-        </button>
-      `;
-    }
+  if (!list) return;
 
-    return `
-      <article class="item">
+  list.innerHTML =
+    '<div class="empty">جارٍ تحميل المشاركات…</div>';
 
-        ${media}
+  const { data, error } = await supabase
+    .from('submissions')
+    .select('*')
+    .eq('status', currentStatus)
+    .order('id', {
+      ascending: false
+    });
 
-        <div class="content">
+  if (error) {
+    console.error(
+      'LOAD SUBMISSIONS ERROR:',
+      error
+    );
 
-          <h3>
-            ${title}
-            <span class="badge">
-              ${category}
-            </span>
-          </h3>
+    list.innerHTML = `
+      <div class="empty">
+        ${escapeHtml(
+          `تعذر تحميل المشاركات: ${error.message}`
+        )}
+      </div>
+    `;
 
-          <div class="meta">
-            <b>${name}</b>
-            · الصف: ${grade}
-            <br>
-            تاريخ الإرسال:
-            ${formatDate(row.submitted_at)}
-          </div>
+    return;
+  }
 
-          <div class="message">
-            ${description}
-          </div>
+  rows = Array.isArray(data)
+    ? data
+    : [];
 
-          <div class="actions">
-            ${actionButtons}
-          </div>
+  const cards = [];
 
-        </div>
+  for (const row of rows) {
+    cards.push(
+      await renderRow(row)
+    );
+  }
 
-      </article>
+  if (cards.length === 0) {
+    list.innerHTML =
+      '<div class="empty">لا توجد مشاركات في هذا القسم.</div>';
+
+    return;
+  }
+
+  list.innerHTML = cards.join('');
+}
+
+/* =========================
+   Render submission
+========================= */
+
+async function renderRow(row) {
+  const mediaUrl = await getMediaUrl(
+    row.storage_path
+  );
+
+  const title = escapeHtml(
+    row.title || 'مشاركة وطنية'
+  );
+
+  const name = escapeHtml(
+    row.student_name || 'مشارك'
+  );
+
+  const grade = escapeHtml(
+    row.grade || 'غير محدد'
+  );
+
+  const className = escapeHtml(
+    row.class_name || ''
+  );
+
+  const description = escapeHtml(
+    row.description || ''
+  );
+
+  const category = escapeHtml(
+    categoryFromTitle(row.title)
+  );
+
+  const mediaType = String(
+    row.media_type || ''
+  ).toLowerCase();
+
+  const date = formatDate(
+    getSubmissionDate(row)
+  );
+
+  /* =========================
+     Media preview
+  ========================= */
+
+  let media = `
+    <div class="media">
+      <span>مشاركة نصية بدون مرفق</span>
+    </div>
+  `;
+
+  if (
+    mediaUrl &&
+    mediaType === 'video'
+  ) {
+    media = `
+      <div class="media">
+        <video
+          src="${escapeHtml(mediaUrl)}"
+          controls
+          preload="metadata"
+        ></video>
+      </div>
+    `;
+  } else if (
+    mediaUrl &&
+    (
+      mediaType === 'image' ||
+      mediaType === 'photo'
+    )
+  ) {
+    media = `
+      <div class="media">
+        <img
+          src="${escapeHtml(mediaUrl)}"
+          alt="${title}"
+          loading="lazy"
+        >
+      </div>
     `;
   }
 
-  // =========================================================
-  // تحديث حالة المشاركة
-  // =========================================================
+  /* =========================
+     Action buttons
+  ========================= */
 
-  async function updateStatus(id, status) {
-    const { error } = await sb
-      .from('submissions')
-      .update({
-        status
-      })
-      .eq('id', id);
+  let actionButtons = '';
 
-    if (error) {
-      console.error(
-        'UPDATE STATUS ERROR:',
-        error
-      );
+  if (currentStatus === 'pending') {
+    actionButtons = `
+      <button
+        class="btn approve"
+        type="button"
+        data-action="approve"
+        data-id="${escapeHtml(row.id)}"
+      >
+        اعتماد ونشر
+      </button>
 
-      alert(
-        `تعذر تحديث المشاركة:\n${error.message}`
-      );
+      <button
+        class="btn reject"
+        type="button"
+        data-action="reject"
+        data-id="${escapeHtml(row.id)}"
+      >
+        رفض
+      </button>
 
-      return false;
-    }
+      <button
+        class="btn delete"
+        type="button"
+        data-action="delete"
+        data-id="${escapeHtml(row.id)}"
+      >
+        حذف نهائي
+      </button>
+    `;
+  } else if (currentStatus === 'approved') {
+    actionButtons = `
+      <button
+        class="btn delete"
+        type="button"
+        data-action="delete"
+        data-id="${escapeHtml(row.id)}"
+      >
+        حذف نهائي
+      </button>
+    `;
+  } else if (currentStatus === 'rejected') {
+    actionButtons = `
+      <button
+        class="btn approve"
+        type="button"
+        data-action="approve"
+        data-id="${escapeHtml(row.id)}"
+      >
+        اعتماد ونشر
+      </button>
 
-    return true;
+      <button
+        class="btn delete"
+        type="button"
+        data-action="delete"
+        data-id="${escapeHtml(row.id)}"
+      >
+        حذف نهائي
+      </button>
+    `;
   }
 
-  // =========================================================
-  // حذف المشاركة
-  // =========================================================
+  return `
+    <article class="item">
 
-  async function deleteSubmission(id) {
-    const row = rows.find(
-      (item) =>
-        String(item.id) === String(id)
+      ${media}
+
+      <div class="content">
+
+        <h3>
+          ${title}
+          <span class="badge">
+            ${category}
+          </span>
+        </h3>
+
+        <div class="meta">
+          <b>${name}</b>
+          · الصف: ${grade}
+
+          ${
+            className
+              ? ` · الفصل: ${className}`
+              : ''
+          }
+
+          <br>
+
+          تاريخ الإرسال:
+          ${date}
+        </div>
+
+        <div class="message">
+          ${description || '—'}
+        </div>
+
+        <div class="actions">
+          ${actionButtons}
+        </div>
+
+      </div>
+
+    </article>
+  `;
+}
+
+/* =========================
+   Update status
+========================= */
+
+async function updateStatus(id, status) {
+  const allowedStatuses = [
+    'pending',
+    'approved',
+    'rejected'
+  ];
+
+  if (!allowedStatuses.includes(status)) {
+    console.error(
+      'INVALID STATUS:',
+      status
     );
 
-    if (!row) {
-      return false;
-    }
+    return false;
+  }
 
-    const ok = window.confirm(
-      'سيتم حذف المشاركة وملفها من التخزين نهائيًا. هل تريد المتابعة؟'
+  const { error } = await supabase
+    .from('submissions')
+    .update({
+      status
+    })
+    .eq('id', id);
+
+  if (error) {
+    console.error(
+      'UPDATE STATUS ERROR:',
+      error
     );
 
-    if (!ok) {
-      return false;
-    }
+    alert(
+      `تعذر تحديث المشاركة:\n${error.message}`
+    );
 
-    // حذف الملف من Storage
-    if (row.storage_path) {
+    return false;
+  }
 
-      const {
-        error: storageError
-      } = await sb.storage
+  return true;
+}
+
+/* =========================
+   Delete submission
+========================= */
+
+async function deleteSubmission(id) {
+  const row = rows.find(
+    (item) =>
+      String(item.id) === String(id)
+  );
+
+  if (!row) {
+    return false;
+  }
+
+  const ok = window.confirm(
+    'سيتم حذف المشاركة وملفها من التخزين نهائيًا. هل تريد المتابعة؟'
+  );
+
+  if (!ok) {
+    return false;
+  }
+
+  /* Delete media only when it exists */
+  if (row.storage_path) {
+    const { error: storageError } =
+      await supabase.storage
         .from(BUCKET)
         .remove([
           row.storage_path
         ]);
 
-      if (storageError) {
-        console.error(
-          'STORAGE DELETE ERROR:',
-          storageError
-        );
-
-        alert(
-          `تعذر حذف ملف المشاركة من التخزين:\n${storageError.message}`
-        );
-
-        return false;
-      }
-    }
-
-    // حذف السجل من قاعدة البيانات
-    const {
-      error: dbError
-    } = await sb
-      .from('submissions')
-      .delete()
-      .eq('id', id);
-
-    if (dbError) {
+    if (storageError) {
       console.error(
-        'DATABASE DELETE ERROR:',
-        dbError
+        'DELETE STORAGE ERROR:',
+        storageError
       );
 
       alert(
-        `تم حذف الملف أو تعذر حذف سجل المشاركة:\n${dbError.message}`
+        `تعذر حذف ملف المشاركة من التخزين:\n${storageError.message}`
       );
 
       return false;
     }
-
-    return true;
   }
 
-  // =========================================================
-  // تنفيذ إجراءات الأزرار
-  // =========================================================
+  /* Delete database record */
+  const { error: dbError } =
+    await supabase
+      .from('submissions')
+      .delete()
+      .eq('id', id);
 
-  async function handleAction(action, id) {
+  if (dbError) {
+    console.error(
+      'DELETE DATABASE ERROR:',
+      dbError
+    );
 
-    if (action === 'delete') {
+    alert(
+      `تعذر حذف سجل المشاركة:\n${dbError.message}`
+    );
 
-      if (
-        await deleteSubmission(id)
-      ) {
-        await refreshAll();
-      }
-
-      return;
-    }
-
-    if (action === 'approve') {
-
-      if (
-        await updateStatus(
-          id,
-          'approved'
-        )
-      ) {
-        await refreshAll();
-      }
-
-      return;
-    }
-
-    if (action === 'reject') {
-
-      if (
-        await updateStatus(
-          id,
-          'rejected'
-        )
-      ) {
-        await refreshAll();
-      }
-    }
+    return false;
   }
 
-  // =========================================================
-  // تحديث اللوحة بالكامل
-  // =========================================================
+  return true;
+}
 
-  async function refreshAll() {
-    await loadStats();
-    await loadRows();
+/* =========================
+   Actions
+========================= */
+
+async function handleAction(
+  action,
+  id
+) {
+  if (action === 'delete') {
+    if (
+      await deleteSubmission(id)
+    ) {
+      await refreshAll();
+    }
+
+    return;
   }
 
-  // =========================================================
-  // الأحداث
-  // =========================================================
+  if (action === 'approve') {
+    if (
+      await updateStatus(
+        id,
+        'approved'
+      )
+    ) {
+      await refreshAll();
+    }
 
-  function setupEvents() {
+    return;
+  }
 
-    const loginForm =
-      $('loginForm');
+  if (action === 'reject') {
+    if (
+      await updateStatus(
+        id,
+        'rejected'
+      )
+    ) {
+      await refreshAll();
+    }
+  }
+}
 
-    if (loginForm) {
+/* =========================
+   Refresh
+========================= */
 
-      loginForm.addEventListener(
-        'submit',
-        (event) => {
-          event.preventDefault();
-          sendMagicLink();
+async function refreshAll() {
+  await loadStats();
+  await loadRows();
+}
+
+/* =========================
+   Events
+========================= */
+
+function setupEvents() {
+  const loginForm = $('loginForm');
+  const logoutButton = $('logoutButton');
+  const refreshButton = $('refreshButton');
+  const tabs = $('tabs');
+  const list = $('list');
+
+  if (loginForm) {
+    loginForm.addEventListener(
+      'submit',
+      (event) => {
+        event.preventDefault();
+        sendMagicLink();
+      }
+    );
+  }
+
+  if (logoutButton) {
+    logoutButton.addEventListener(
+      'click',
+      async () => {
+        await supabase.auth.signOut({
+          scope: 'local'
+        });
+
+        window.location.reload();
+      }
+    );
+  }
+
+  if (refreshButton) {
+    refreshButton.addEventListener(
+      'click',
+      async () => {
+        refreshButton.disabled = true;
+
+        try {
+          await refreshAll();
+        } catch (error) {
+          console.error(
+            'REFRESH ERROR:',
+            error
+          );
+        } finally {
+          refreshButton.disabled = false;
         }
-      );
-    }
+      }
+    );
+  }
 
-    const logoutButton =
-      $('logoutButton');
-
-    if (logoutButton) {
-
-      logoutButton.addEventListener(
-        'click',
-        async () => {
-
-          await sb.auth.signOut({
-            scope: 'local'
-          });
-
-          window.location.reload();
-        }
-      );
-    }
-
-    const refreshButton =
-      $('refreshButton');
-
-    if (refreshButton) {
-
-      refreshButton.addEventListener(
-        'click',
-        refreshAll
-      );
-    }
-
-    const tabs =
-      $('tabs');
-
-    if (tabs) {
-
-      tabs.addEventListener(
-        'click',
-        async (event) => {
-
-          const button =
-            event.target.closest(
-              '[data-status]'
-            );
-
-          if (!button) {
-            return;
-          }
-
-          currentStatus =
-            button.dataset.status;
-
-          document
-            .querySelectorAll('.tab')
-            .forEach(
-              (item) =>
-                item.classList.remove(
-                  'active'
-                )
-            );
-
-          button.classList.add(
-            'active'
+  if (tabs) {
+    tabs.addEventListener(
+      'click',
+      async (event) => {
+        const button =
+          event.target.closest(
+            '[data-status]'
           );
 
-          await loadRows();
-        }
-      );
-    }
+        if (!button) return;
 
-    const list =
-      $('list');
+        currentStatus =
+          button.dataset.status;
 
-    if (list) {
-
-      list.addEventListener(
-        'click',
-        async (event) => {
-
-          const button =
-            event.target.closest(
-              '[data-action]'
+        document
+          .querySelectorAll('.tab')
+          .forEach((item) => {
+            item.classList.remove(
+              'active'
             );
+          });
 
-          if (!button) {
-            return;
-          }
+        button.classList.add(
+          'active'
+        );
 
-          button.disabled = true;
-
-          try {
-
-            await handleAction(
-              button.dataset.action,
-              button.dataset.id
-            );
-
-          } finally {
-
-            button.disabled = false;
-          }
-        }
-      );
-    }
+        await loadRows();
+      }
+    );
   }
 
-  // =========================================================
-  // عرض لوحة الإدارة
-  // =========================================================
+  if (list) {
+    list.addEventListener(
+      'click',
+      async (event) => {
+        const button =
+          event.target.closest(
+            '[data-action]'
+          );
 
-  async function showAdmin() {
+        if (!button) return;
 
-    const user =
-      await getVerifiedUser();
+        if (button.disabled) {
+          return;
+        }
 
-    const adminPanel =
-      $('adminPanel');
+        button.disabled = true;
 
-    const loginPanel =
-      $('loginPanel');
-
-    if (!user) {
-
-      if (adminPanel) {
-        adminPanel.classList.add(
-          'hidden'
-        );
+        try {
+          await handleAction(
+            button.dataset.action,
+            button.dataset.id
+          );
+        } finally {
+          button.disabled = false;
+        }
       }
+    );
+  }
+}
 
-      if (loginPanel) {
-        loginPanel.classList.remove(
-          'hidden'
-        );
-      }
+/* =========================
+   Admin screen
+========================= */
 
-      showStatus(
-        $('loginStatus'),
-        'يجب الدخول بحساب الإدارة المعتمد.',
-        'error'
-      );
+async function showAdmin() {
+  const user =
+    await getVerifiedUser();
 
-      return;
-    }
+  if (!user) {
+    $('adminPanel')
+      .classList.add('hidden');
 
-    if (loginPanel) {
-      loginPanel.classList.add(
-        'hidden'
-      );
-    }
+    $('loginPanel')
+      .classList.remove('hidden');
 
-    if (adminPanel) {
-      adminPanel.classList.remove(
-        'hidden'
-      );
-    }
+    showStatus(
+      $('loginStatus'),
+      'يجب الدخول بحساب الإدارة المعتمد.',
+      'error'
+    );
 
-    const userInfo =
-      $('userInfo');
-
-    if (userInfo) {
-      userInfo.textContent =
-        `مسجل الدخول: ${user.email}`;
-    }
-
-    try {
-
-      await refreshAll();
-
-    } catch (error) {
-
-      console.error(
-        'ADMIN LOAD ERROR:',
-        error
-      );
-
-      const list =
-        $('list');
-
-      if (list) {
-        list.innerHTML =
-          `<div class="empty">${
-            escapeHtml(
-              error.message
-            )
-          }</div>`;
-      }
-    }
+    return;
   }
 
-  // =========================================================
-  // تشغيل الصفحة
-  // =========================================================
+  $('loginPanel')
+    .classList.add('hidden');
 
-  async function boot() {
+  $('adminPanel')
+    .classList.remove('hidden');
 
-    // نتأكد أن مكتبة Supabase موجودة
-    if (!window.supabase) {
+  $('userInfo').textContent =
+    `مسجل الدخول: ${user.email}`;
 
-      console.error(
-        'Supabase library is not loaded.'
-      );
+  try {
+    await refreshAll();
+  } catch (error) {
+    console.error(
+      'ADMIN LOAD ERROR:',
+      error
+    );
 
-      showStatus(
-        $('loginStatus'),
-        'تعذر تحميل مكتبة Supabase. تحقق من admin.html.',
-        'error'
-      );
+    $('list').innerHTML = `
+      <div class="empty">
+        ${escapeHtml(
+          error.message ||
+          'تعذر تحميل لوحة الإدارة.'
+        )}
+      </div>
+    `;
+  }
+}
 
-      return;
-    }
+/* =========================
+   Boot
+========================= */
 
-    setupEvents();
+async function boot() {
+  setupEvents();
 
-    const user =
-      await getVerifiedUser();
+  const user =
+    await getVerifiedUser();
 
-    if (user) {
+  if (user) {
+    await showAdmin();
+    return;
+  }
 
+  const hash =
+    new URLSearchParams(
+      window.location.hash.slice(1)
+    );
+
+  const errorCode =
+    hash.get('error_code');
+
+  if (errorCode) {
+    const description =
+      hash.get('error_description');
+
+    showStatus(
+      $('loginStatus'),
+      `تعذر إكمال الدخول: ${
+        description || errorCode
+      }`,
+      'error'
+    );
+
+    history.replaceState(
+      null,
+      '',
+      window.location.pathname +
+      window.location.search
+    );
+  }
+}
+
+/* =========================
+   Auth state
+========================= */
+
+supabase.auth.onAuthStateChange(
+  async (event, session) => {
+    if (
+      event === 'SIGNED_IN' &&
+      session
+    ) {
       await showAdmin();
-
-      return;
-    }
-
-    // فحص أخطاء رابط الدخول
-    const hash =
-      new URLSearchParams(
-        window.location.hash.slice(1)
-      );
-
-    const errorCode =
-      hash.get('error_code');
-
-    if (errorCode) {
-
-      const description =
-        hash.get(
-          'error_description'
-        );
-
-      showStatus(
-        $('loginStatus'),
-        `تعذر إكمال الدخول: ${
-          description || errorCode
-        }`,
-        'error'
-      );
-
-      history.replaceState(
-        null,
-        '',
-        window.location.pathname +
-        window.location.search
-      );
     }
   }
+);
 
-  // =========================================================
-  // مراقبة تسجيل الدخول
-  // =========================================================
-
-  sb.auth.onAuthStateChange(
-    async (event, session) => {
-
-      if (
-        event === 'SIGNED_IN' &&
-        session
-      ) {
-        await showAdmin();
-      }
-    }
-  );
-
-  // بدء التطبيق
-  boot();
-
-})();
+boot();
