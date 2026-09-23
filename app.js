@@ -996,14 +996,11 @@ async function submitParticipation(
 ) {
 
   event.preventDefault();
-
   event.stopPropagation();
-
 
   if (isSubmitting) {
     return;
   }
-
 
   const form =
     event.currentTarget;
@@ -1012,9 +1009,7 @@ async function submitParticipation(
     return;
   }
 
-
   if (!supabaseClient) {
-
     showStatus(
       'الاتصال بخدمة المشاركة غير جاهز. حاول تحديث الصفحة.',
       'error'
@@ -1023,47 +1018,45 @@ async function submitParticipation(
     return;
   }
 
-
   const fd =
     new FormData(form);
 
+  /* =================================
+     قراءة البيانات الأساسية
+  ================================= */
 
   const file =
     fd.get('media') ||
-    getFileInput()?.files?.[0];
-
+    getFileInput()?.files?.[0] ||
+    null;
 
   const name =
     String(
       fd.get('name') || ''
     ).trim();
 
-
   const category =
     String(
       fd.get('category') || ''
     ).trim();
-
 
   const grade =
     String(
       fd.get('grade') || ''
     ).trim();
 
-
   const message =
     String(
       fd.get('message') || ''
     ).trim();
 
-
   const consent =
     fd.get('consent') === 'on';
 
-
-  /* -----------------------------
-     التحقق من البيانات
-  ----------------------------- */
+  /* =================================
+     التحقق من البيانات الأساسية
+     الملف اختياري
+  ================================= */
 
   if (
     !name ||
@@ -1080,144 +1073,127 @@ async function submitParticipation(
     return;
   }
 
-
-  if (
-    !file ||
-    !(file instanceof File) ||
-    file.size === 0
-  ) {
-
-    showStatus(
-      'اختر صورة أو فيديو للمشاركة أولًا.',
-      'error'
-    );
-
-    return;
-  }
-
-
-  if (
-    !ALLOWED_TYPES.has(
-      file.type
-    )
-  ) {
-
-    showStatus(
-      'نوع الملف غير مسموح.',
-      'error'
-    );
-
-    return;
-  }
-
-
-  if (
-    file.size >
-    MAX_FILE_SIZE
-  ) {
-
-    showStatus(
-      'حجم الملف يتجاوز 25 MB.',
-      'error'
-    );
-
-    return;
-  }
-
-
   /* =================================
-     تحديد نوع الوسائط
+     التحقق من الملف فقط إذا تم اختياره
   ================================= */
 
-  const mediaType =
-    file.type.startsWith(
-      'video/'
-    )
-      ? 'video'
-      : 'image';
-
-
-  /* =================================
-     إنشاء معرف المشاركة
-  ================================= */
-
+  let selectedFile = null;
+  let mediaType = null;
+  let storagePath = null;
   const submissionId =
     crypto.randomUUID();
 
+  if (
+    file &&
+    file instanceof File &&
+    file.size > 0
+  ) {
 
-  const storagePath =
-    `${submissionId}/${mediaType}/${sanitizeFileName(file.name)}`;
+    selectedFile = file;
 
+    if (
+      !ALLOWED_TYPES.has(
+        selectedFile.type
+      )
+    ) {
+
+      showStatus(
+        'نوع الملف غير مسموح. اختر صورة أو فيديو مدعومًا.',
+        'error'
+      );
+
+      return;
+    }
+
+    if (
+      selectedFile.size >
+      MAX_FILE_SIZE
+    ) {
+
+      showStatus(
+        'حجم الملف يتجاوز 25 MB.',
+        'error'
+      );
+
+      return;
+    }
+
+    mediaType =
+      selectedFile.type.startsWith(
+        'video/'
+      )
+        ? 'video'
+        : 'image';
+
+    storagePath =
+      `${submissionId}/${mediaType}/${sanitizeFileName(selectedFile.name)}`;
+  }
 
   const title =
     `${labels[category]} - مشاركة اليوم الوطني`;
-
 
   setSubmitting(
     true
   );
 
-
   showStatus(
-    'جارٍ رفع المشاركة…',
+    selectedFile
+      ? 'جارٍ رفع المشاركة…'
+      : 'جارٍ تسجيل المشاركة النصية…',
     'info'
   );
-
 
   try {
 
     /* =================================
-       رفع الملف
+       رفع الملف — فقط إذا اختاره المستخدم
     ================================= */
 
-    const {
-      error: uploadError
-    } =
-      await supabaseClient.storage
-        .from('submissions')
-        .upload(
-          storagePath,
-          file,
-          {
-            cacheControl:
-              '3600',
+    if (selectedFile && storagePath) {
 
-            contentType:
-              file.type,
+      const {
+        error: uploadError
+      } =
+        await supabaseClient.storage
+          .from('submissions')
+          .upload(
+            storagePath,
+            selectedFile,
+            {
+              cacheControl:
+                '3600',
+              contentType:
+                selectedFile.type,
+              upsert:
+                false
+            }
+          );
 
-            upsert:
-              false
-          }
+      if (uploadError) {
+
+        console.error(
+          'STORAGE UPLOAD ERROR:',
+          uploadError
         );
 
+        throw new Error(
+          `تعذر رفع الملف: ${uploadError.message}`
+        );
+      }
 
-    if (uploadError) {
-
-      console.error(
-        'STORAGE UPLOAD ERROR:',
-        uploadError
-      );
-
-      throw new Error(
-        `تعذر رفع الملف: ${uploadError.message}`
+      showStatus(
+        'تم رفع الملف. جارٍ تسجيل المشاركة…',
+        'info'
       );
     }
 
-
     /* =================================
-       تسجيل المشاركة
+       تسجيل المشاركة في قاعدة البيانات
     ================================= */
-
-    showStatus(
-      'تم رفع الملف. جارٍ تسجيل المشاركة…',
-      'info'
-    );
-
 
     const safeGrade =
       grade ||
       'غير محدد';
-
 
     const {
       error: insertError
@@ -1225,35 +1201,25 @@ async function submitParticipation(
       await supabaseClient
         .from('submissions')
         .insert({
-
           id:
             submissionId,
-
           student_name:
             name,
-
           grade:
             safeGrade,
-
           title:
             title,
-
           description:
             message,
-
           media_type:
             mediaType,
-
           storage_path:
             storagePath,
-
           guardian_consent:
             true,
-
           status:
             'pending'
         });
-
 
     if (insertError) {
 
@@ -1262,31 +1228,35 @@ async function submitParticipation(
         insertError
       );
 
+      /* ---------------------------------
+         تنظيف الملف إذا تم رفعه ثم فشل الإدخال
+      --------------------------------- */
 
-      try {
+      if (selectedFile && storagePath) {
 
-        await supabaseClient.storage
-          .from('submissions')
-          .remove([
-            storagePath
-          ]);
+        try {
 
-      } catch (
-        cleanupError
-      ) {
+          await supabaseClient.storage
+            .from('submissions')
+            .remove([
+              storagePath
+            ]);
 
-        console.error(
-          'STORAGE CLEANUP ERROR:',
+        } catch (
           cleanupError
-        );
-      }
+        ) {
 
+          console.error(
+            'STORAGE CLEANUP ERROR:',
+            cleanupError
+          );
+        }
+      }
 
       throw new Error(
         `تعذر تسجيل المشاركة: ${insertError.message}`
       );
     }
-
 
     /* =================================
        نجاح الإرسال
@@ -1294,9 +1264,11 @@ async function submitParticipation(
 
     console.log(
       'SUBMISSION SUCCESS:',
-      submissionId
+      submissionId,
+      selectedFile
+        ? 'media'
+        : 'text'
     );
-
 
     form.reset();
 
@@ -1306,9 +1278,7 @@ async function submitParticipation(
 
     showSuccessMessage();
 
-
     await loadSubmissions();
-
 
   } catch (error) {
 
@@ -1317,13 +1287,11 @@ async function submitParticipation(
       error
     );
 
-
     showStatus(
       error?.message ||
       'حدث خطأ غير متوقع أثناء إرسال المشاركة.',
       'error'
     );
-
 
   } finally {
 
@@ -1345,6 +1313,15 @@ function setupInterface() {
 
 
   if (form) {
+
+    /* الملف اختياري: لا نسمح لـ HTML required بمنع الإرسال النصي */
+    const fileInput =
+      getFileInput();
+
+    if (fileInput) {
+      fileInput.required = false;
+      fileInput.removeAttribute('required');
+    }
 
     form.addEventListener(
       'submit',
