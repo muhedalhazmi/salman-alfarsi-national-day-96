@@ -1,1 +1,103 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#064c43">
+  <title>إدارة المشاركات | اليوم الوطني 96</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root{--green:#064c43;--green2:#0b6b5e;--bg:#f4f6f5;--card:#fff;--text:#18322d;--muted:#6c7b77;--danger:#a33a32}
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:Tajawal,Arial,sans-serif}
+    button,input{font:inherit}
+    .top{background:var(--green);color:#fff;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+    .brand{display:flex;align-items:center;gap:12px}.brand b{display:block;font-size:20px}.brand small{opacity:.8}
+    .top-actions{display:flex;gap:8px;flex-wrap:wrap}
+    .btn{border:0;border-radius:10px;padding:10px 16px;cursor:pointer;font-weight:700;text-decoration:none;display:inline-block}
+    .btn-light{background:#fff;color:var(--green)}
+    .wrap{max-width:1250px;margin:28px auto;padding:0 18px}
+    .panel{background:var(--card);border:1px solid #e1e7e4;border-radius:18px;padding:24px;box-shadow:0 8px 28px rgba(0,0,0,.05)}
+    .login{max-width:520px;margin:60px auto}.login h1{margin:0 0 8px}.login p{color:var(--muted);line-height:1.8}
+    label{display:block;font-weight:700;margin:16px 0 8px}
+    input[type=email]{width:100%;padding:13px;border:1px solid #ccd7d3;border-radius:10px;outline:none}
+    input:focus{border-color:var(--green2)}
+    .status{margin-top:14px;padding:12px 14px;border-radius:10px;display:none;line-height:1.7}
+    .status.info{display:block;background:#eef5f3;color:var(--green)}.status.success{display:block;background:#eaf7ef;color:#17633a}.status.error{display:block;background:#fff0ee;color:#8c2e27}
+    .hidden{display:none!important}
+    .head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:20px;flex-wrap:wrap}
+    .head h1{margin:0}.head p{margin:4px 0;color:var(--muted)}
+    .tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+    .tab{border:1px solid #ccd7d3;background:#fff;color:var(--text);border-radius:999px;padding:9px 15px;cursor:pointer}
+    .tab.active{background:var(--green);color:#fff;border-color:var(--green)}
+    .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+    .stat{padding:16px;border:1px solid #e1e7e4;border-radius:14px;background:#fbfcfc}
+    .stat b{display:block;font-size:25px;color:var(--green)}.stat span{color:var(--muted)}
+    .list{display:grid;gap:14px}
+    .item{display:grid;grid-template-columns:220px 1fr;gap:18px;border:1px solid #e0e6e3;border-radius:16px;padding:14px;background:#fff}
+    .media{background:#eef2f0;border-radius:12px;overflow:hidden;min-height:180px;display:flex;align-items:center;justify-content:center}
+    .media img,.media video{width:100%;height:100%;max-height:300px;object-fit:cover}
+    .content h3{margin:0 0 7px;font-size:20px}.meta{color:var(--muted);font-size:14px;line-height:1.8}
+    .message{white-space:pre-wrap;line-height:1.9;margin:12px 0}
+    .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+    .approve{background:var(--green);color:#fff}.reject{background:#f4e8e7;color:#8c2e27}.delete{background:#f1f1f1;color:#444}
+    .badge{display:inline-block;padding:5px 9px;border-radius:999px;font-size:12px;font-weight:700;background:#eef5f3;color:var(--green);margin-inline-start:6px}
+    .empty{padding:30px;text-align:center;color:var(--muted);border:1px dashed #cdd7d3;border-radius:14px}
+    @media(max-width:760px){.top{align-items:flex-start;flex-direction:column}.stats{grid-template-columns:1fr}.item{grid-template-columns:1fr}.media{min-height:220px}}
+  </style>
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <div>🇸🇦</div>
+      <div><b>إدارة المشاركات الوطنية</b><small>مدرسة سلمان الفارسي الابتدائية</small></div>
+    </div>
+    <div class="top-actions">
+      <a class="btn btn-light" href="index.html">العودة للموقع</a>
+      <button class="btn btn-light" id="logoutButton" type="button">تسجيل الخروج</button>
+    </div>
+  </header>
 
+  <main class="wrap">
+    <section class="panel login" id="loginPanel">
+      <h1>دخول الإدارة</h1>
+      <p>أدخل بريد الإدارة لإرسال رابط دخول آمن. لا يحتاج الدخول إلى كلمة مرور.</p>
+      <form id="loginForm">
+        <label for="email">البريد الإلكتروني</label>
+        <input id="email" type="email" value="muhedalhazmi@gmail.com" autocomplete="email" required>
+        <button class="btn" style="margin-top:14px;background:var(--green);color:#fff;width:100%" type="submit">إرسال رابط الدخول</button>
+      </form>
+      <div id="loginStatus" class="status" aria-live="polite"></div>
+    </section>
+
+    <section class="panel hidden" id="adminPanel">
+      <div class="head">
+        <div>
+          <h1>لوحة الاعتماد</h1>
+          <p id="userInfo"></p>
+        </div>
+        <button class="btn btn-light" id="refreshButton" type="button">تحديث المشاركات ↻</button>
+      </div>
+
+      <div class="stats">
+        <div class="stat"><b id="pendingCount">0</b><span>بانتظار الاعتماد</span></div>
+        <div class="stat"><b id="approvedCount">0</b><span>معتمدة</span></div>
+        <div class="stat"><b id="rejectedCount">0</b><span>مرفوضة</span></div>
+      </div>
+
+      <div class="tabs" id="tabs">
+        <button class="tab active" data-status="pending" type="button">بانتظار الاعتماد</button>
+        <button class="tab" data-status="approved" type="button">المعتمدة</button>
+        <button class="tab" data-status="rejected" type="button">المرفوضة</button>
+      </div>
+
+      <div id="list" class="list"></div>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
+  <script src="admin.js"></script>
+</body>
+</html>
