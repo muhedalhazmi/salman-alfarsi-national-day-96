@@ -6,6 +6,8 @@
 
 الموقع صفحات HTML ثابتة، وتُنشر الملفات من جذر المستودع عبر GitHub Pages عند كل تحديث لفرع `main`.
 
+رابط المجلة: https://muhedalhazmi.github.io/salman-alfarsi-national-day-96/
+
 الصفحة الرئيسية: `index.html`.
 
 ## المحتوى
