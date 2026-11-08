@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
-  <title id="title">معرض الفيديو</title>
-  <desc id="desc">إطار فيديو يتوسطه زر تشغيل</desc>
-  <rect x="24" y="24" width="464" height="464" rx="88" fill="#eaf5ef"/>
-  <rect x="76" y="98" width="360" height="316" rx="38" fill="#fff" stroke="#12665f" stroke-width="18"/>
-  <path d="M112 132h38v34h-38zm0 214h38v34h-38zm250-214h38v34h-38zm0 214h38v34h-38z" fill="#ddad50"/>
-  <circle cx="256" cy="256" r="94" fill="#12665f" stroke="#ddad50" stroke-width="12"/>
-  <path d="M235 203c-9-6-20 1-20 12v82c0 11 11 18 20 12l64-41c9-6 9-19 0-25z" fill="#fff"/>
-</svg>
