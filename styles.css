@@ -658,6 +658,46 @@ footer p{
   object-fit:cover
 }
 
+/* المشاركات: صور وفيديو داخل بطاقات متناسقة على كل الشاشات */
+.submission-card{
+  min-width:0;
+  overflow:hidden;
+  border:1px solid var(--line);
+  border-radius:18px;
+  background:#fff;
+  box-shadow:0 8px 25px #12342f0b
+}
+
+.submission-media{
+  width:100%;
+  aspect-ratio:4/3;
+  max-height:260px;
+  overflow:hidden;
+  display:grid;
+  place-items:center;
+  background:#edf3ef
+}
+
+.submission-media img,
+.submission-media video{
+  display:block;
+  width:100%;
+  height:100%;
+  max-width:100%;
+  object-fit:contain;
+  background:#102b27
+}
+
+.submission-content{
+  min-width:0;
+  padding:14px 16px 16px
+}
+
+.submission-content h3,
+.submission-content p{
+  overflow-wrap:anywhere
+}
+
 
 /* =========================
    نموذج المشاركة
@@ -886,6 +926,15 @@ footer p{
 
   .card-media{
     height:220px
+  }
+
+  .submission-media{
+    aspect-ratio:4/3;
+    max-height:230px
+  }
+
+  .submission-content{
+    padding:12px 14px
   }
 
 }
